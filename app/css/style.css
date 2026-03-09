@@ -106,15 +106,17 @@ body {
 
 #reader {
     flex: 1;
-    max-width: 800px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 32px 24px 80px;
-    transition: margin 0.3s ease;
+    padding: 32px 48px 80px;
+    transition: margin 0.3s ease, padding 0.3s ease;
 }
 
 .panel-open #reader {
-    margin-left: 0;
+    margin-left: var(--panel-width);
     margin-right: auto;
+    padding-left: 32px;
+    padding-right: 48px;
 }
 
 /* ── Surah Title ────────────────────────────────── */
@@ -474,6 +476,12 @@ body {
     }
 
     #reader { padding: 20px 16px 60px; }
+
+    .panel-open #reader {
+        margin-left: 0;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
 
     .verse-text { font-size: 1.35rem; }
 
