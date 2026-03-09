@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>القرآن بالقرآن — Quran bil-Quran</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header id="header">
+        <div class="header-right">
+            <h1 class="logo">القرآن بالقرآن</h1>
+        </div>
+        <div class="header-center">
+            <button id="prev-surah" class="nav-btn" title="السورة السابقة">→</button>
+            <select id="surah-select"></select>
+            <button id="next-surah" class="nav-btn" title="السورة التالية">←</button>
+        </div>
+        <div class="header-left">
+            <span id="surah-info" class="surah-meta"></span>
+        </div>
+    </header>
+
+    <main id="main">
+        <section id="reader">
+            <div id="surah-header" class="surah-title-block">
+                <h2 id="surah-name-ar"></h2>
+                <p id="surah-name-en"></p>
+            </div>
+            <div id="verses"></div>
+        </section>
+
+        <aside id="root-panel" class="panel-hidden">
+            <div class="panel-header">
+                <h3 id="panel-title">الجذر</h3>
+                <button id="close-panel" class="close-btn">&times;</button>
+            </div>
+            <div class="panel-body">
+                <div id="root-display" class="root-arabic"></div>
+                <div id="root-buckwalter" class="root-translit"></div>
+                <div id="root-meaning" class="root-meaning"></div>
+                <div id="root-frequency" class="root-freq"></div>
+
+                <div id="root-family-section" class="panel-section" style="display:none">
+                    <h4>الأسرة الدلالية — Semantic Family</h4>
+                    <div id="root-family-info"></div>
+                </div>
+
+                <div class="panel-section">
+                    <h4 id="connected-header">الآيات المتصلة — Connected Verses</h4>
+                    <div id="connected-verses"></div>
+                    <button id="show-more-btn" style="display:none" class="show-more">عرض المزيد</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <div id="loading-overlay">
+        <div class="loader">
+            <div class="loader-text">جارٍ التحميل...</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
