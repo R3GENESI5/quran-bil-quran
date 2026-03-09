@@ -239,6 +239,7 @@ header {
     font-weight: 700;
     color: #fff;
     text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 .detail-arrow {
     font-size: 1.2rem;
@@ -324,6 +325,24 @@ header {
     color: var(--gold); cursor: pointer;
 }
 .detail-show-more:hover { background: rgba(184,134,11,0.08); }
+
+/* ── Root Detail View ────────────────────────── */
+.root-back-row { text-align: center; margin-bottom: 8px; }
+.root-back-btn { width: auto; display: inline-block; margin-bottom: 12px; }
+.root-letters {
+    text-align: center; font-size: 2.6rem; font-weight: 700;
+    color: var(--gold); letter-spacing: 4px; margin-bottom: 4px;
+}
+.root-buckwalter {
+    text-align: center; font-family: var(--font-en); font-size: 0.85rem;
+    color: var(--text-muted); margin-bottom: 12px; direction: ltr;
+}
+.root-meaning-box {
+    font-family: var(--font-en); font-size: 0.9rem; line-height: 1.6;
+    padding: 12px; background: var(--panel-bg); border-radius: 6px;
+    margin-bottom: 12px; direction: ltr; text-align: left;
+}
+.root-families { text-align: center; margin-bottom: 16px; }
 
 @media (max-width: 600px) {
     .page-intro h1 { font-size: 1.4rem; }
@@ -560,6 +579,7 @@ header {
             ribbons.attr('fill-opacity', 0.45);
             groups.selectAll('path').attr('opacity', 1);
         });
+        chip.addEventListener('click', () => showFamilyDetail(i));
         legend.appendChild(chip);
     });
 
@@ -598,24 +618,21 @@ header {
         return shared;
     }
 
+    let _verseListId = 0;
     function renderVerseList(verses, limit) {
         const shown = verses.slice(0, limit);
-        let html = shown.map(vk => `
-            <a class="detail-verse" href="index.html#v-${vk}" target="_blank">
+        const verseHTML = vk => `
+            <a class="detail-verse" href="index.html#${vk}" target="_blank">
                 <div class="detail-verse-key">${vk}</div>
                 <div class="detail-verse-text">${versesText[vk] || ''}</div>
-            </a>
-        `).join('');
+            </a>`;
+        let html = shown.map(verseHTML).join('');
         if (verses.length > limit) {
-            html += `<button class="detail-show-more" onclick="this.parentNode.innerHTML=window.__allVersesHTML">
+            const storeKey = `__verses_${++_verseListId}`;
+            window[storeKey] = verses.map(verseHTML).join('');
+            html += `<button class="detail-show-more" onclick="this.parentNode.innerHTML=window['${storeKey}']">
                 عرض الكل (${verses.length})
             </button>`;
-            window.__allVersesHTML = verses.map(vk => `
-                <a class="detail-verse" href="index.html#v-${vk}" target="_blank">
-                    <div class="detail-verse-key">${vk}</div>
-                    <div class="detail-verse-text">${versesText[vk] || ''}</div>
-                </a>
-            `).join('');
         }
         return html;
     }
@@ -651,6 +668,7 @@ header {
             (r.source.index === si && r.target.index === ti) ||
             (r.source.index === ti && r.target.index === si) ? 0.9 : 0.06
         );
+        detailPanel.scrollTop = 0;
         detailPanel.classList.add('open');
     }
 
@@ -694,6 +712,7 @@ header {
             (r.source.index === idx || r.target.index === idx) ? 0.85 : 0.06
         );
         groups.selectAll('path').attr('opacity', d => d.index === idx ? 1 : 0.3);
+        detailPanel.scrollTop = 0;
         detailPanel.classList.add('open');
     }
 
@@ -703,8 +722,8 @@ header {
     function showRootDetail(rootStr) {
         const data = rootsIndex[rootStr];
         if (!data) return;
-        // Save current panel content for back navigation
-        detailHistory.push(detailBody.innerHTML);
+        // Save current panel content + title for back navigation
+        detailHistory.push({ html: detailBody.innerHTML, title: detailTitle.textContent });
 
         const famIds = data.fam || [];
         const famBadges = famIds.map(fid => {
@@ -714,31 +733,28 @@ header {
 
         detailTitle.textContent = rootStr;
         detailBody.innerHTML = `
-            <div style="text-align:center;margin-bottom:8px">
-                <button class="detail-show-more" id="root-back" style="width:auto;display:inline-block;margin-bottom:12px">→ رجوع</button>
+            <div class="root-back-row">
+                <button class="detail-show-more root-back-btn" id="root-back">→ رجوع</button>
             </div>
-            <div style="text-align:center;font-size:2.6rem;font-weight:700;color:var(--gold);letter-spacing:4px;margin-bottom:4px">
-                ${rootStr.split('').join(' ')}
-            </div>
-            <div style="text-align:center;font-family:var(--font-en);font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;direction:ltr">
-                ${data.b}
-            </div>
-            <div style="font-family:var(--font-en);font-size:0.9rem;line-height:1.6;padding:12px;background:var(--panel-bg);border-radius:6px;margin-bottom:12px;direction:ltr;text-align:left">
-                ${data.m || 'No meaning available'}
-            </div>
+            <div class="root-letters">${rootStr.split('').join(' ')}</div>
+            <div class="root-buckwalter">${data.b}</div>
+            <div class="root-meaning-box">${data.m || 'No meaning available'}</div>
             <div class="detail-count">${data.f} verses across the Quran</div>
-            ${famBadges ? `<div style="text-align:center;margin-bottom:16px">${famBadges}</div>` : ''}
+            ${famBadges ? `<div class="root-families">${famBadges}</div>` : ''}
             <div class="detail-section-title">Connected Verses (${data.v.length})</div>
             <div id="detail-verses">${renderVerseList(data.v, 30)}</div>
         `;
         document.getElementById('root-back').addEventListener('click', () => {
             if (detailHistory.length > 0) {
-                detailBody.innerHTML = detailHistory.pop();
-                detailTitle.textContent = 'التفاصيل';
+                const prev = detailHistory.pop();
+                detailBody.innerHTML = prev.html;
+                detailTitle.textContent = prev.title;
                 attachRootChipListeners();
                 attachConnectionListeners();
+                detailPanel.scrollTop = 0;
             }
         });
+        detailPanel.scrollTop = 0;
         detailPanel.classList.add('open');
     }
 
@@ -773,6 +789,11 @@ header {
         if (!detailPanel.contains(e.target) && detailPanel.classList.contains('open')) {
             closeDetail();
         }
+    });
+
+    // Escape key closes panel
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && detailPanel.classList.contains('open')) closeDetail();
     });
 
 })();
