@@ -148,12 +148,7 @@ const App = {
             el.className = 'verse';
             el.id = `v-${verse.k}`;
 
-            // Verse number
-            const numEl = document.createElement('span');
-            numEl.className = 'verse-num';
-            numEl.textContent = verse.a;
-
-            // Verse text with clickable words
+            // Verse text with clickable words + inline verse number
             const textEl = document.createElement('div');
             textEl.className = 'verse-text';
 
@@ -177,7 +172,13 @@ const App = {
                 }
             });
 
-            el.appendChild(numEl);
+            // Inline verse number at end
+            const numEl = document.createElement('span');
+            numEl.className = 'verse-num';
+            numEl.textContent = verse.a;
+            textEl.appendChild(document.createTextNode(' '));
+            textEl.appendChild(numEl);
+
             el.appendChild(textEl);
             container.appendChild(el);
         });
