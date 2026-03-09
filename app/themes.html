@@ -96,6 +96,24 @@ header {
     font-size: 0.78rem; color: var(--text-muted); padding: 4px 0 0;
 }
 
+/* ── Thematic Summary ─────────────────────────── */
+#thematic-summary {
+    max-width: 700px; margin: 8px auto 0; padding: 10px 20px;
+    font-family: var(--font-en); font-size: 0.82rem; line-height: 1.65;
+    color: var(--text-muted); text-align: center;
+}
+#thematic-summary:empty { display: none; }
+#thematic-summary .summary-topic {
+    font-family: var(--font-ar); font-size: 0.95rem; color: var(--gold);
+    font-weight: 700; display: block; margin-bottom: 2px;
+}
+#thematic-summary .summary-body { direction: ltr; }
+#thematic-summary .summary-pair {
+    display: inline-block; padding: 2px 8px; margin: 2px 3px;
+    border-radius: 10px; font-size: 0.75rem;
+    border: 1px solid var(--border); background: var(--surface);
+}
+
 /* ── Chart ────────────────────────────────────── */
 #chart { display: flex; justify-content: center; padding: 10px; }
 #chart svg { max-width: 100%; height: auto; }
@@ -251,8 +269,14 @@ header {
 
 <div class="page-intro">
     <h1>الأسر الدلالية</h1>
-    <p>Thematic connections across the Quran. Edges between co-occurring semantic families
-       are bundled using force-directed simulation — bundling emerges from the data itself.</p>
+    <p>Every word in the Quran traces back to a trilateral Arabic root. We analyzed <strong>1,231 roots</strong>
+       across all 6,236 verses and grouped synonymous roots into <strong>35 semantic families</strong> —
+       for example, the roots خلق (create), برأ (originate), فطر (bring into being), and صور (fashion)
+       all belong to the <em>Creation</em> family. These families were curated from classical Arabic lexicography
+       (Lane's Lexicon, Maqayis al-Lugha) and validated against the Quranic corpus.</p>
+    <p>When two families appear in the same verse, that's a <em>thematic bridge</em>.
+       The diagram below maps all such bridges — edge thickness shows co-occurrence strength,
+       and force-directed bundling reveals natural clusters where themes converge.</p>
 </div>
 
 <div class="controls">
@@ -268,6 +292,7 @@ header {
     </div>
 </div>
 <div id="stats"></div>
+<div id="thematic-summary"></div>
 
 <div id="loading">جارٍ التحميل...</div>
 <div id="chart"></div>
@@ -693,6 +718,7 @@ header {
     let currentT = 0.85; // bundling interpolation
     let opacityScale = d3.scaleLinear();
     let strokeScale = d3.scaleLinear();
+    let focusedNode = null; // locked node filter from click
 
     // ── Edge Color (blend source + target group colors) ──
     function edgeColor(e) {
@@ -770,9 +796,61 @@ header {
             statsEl.textContent = `${activeFams.size} themes · ${edges.length} connections`;
         }
 
+        renderThematicSummary(surahNum, edges, activeFams);
+
         // Back link
         document.getElementById('back-link').href =
             surahNum ? `index.html#${surahNum}` : 'index.html';
+    }
+
+    // ── Thematic Summary ─────────────────────────────
+    function renderThematicSummary(surahNum, edges, activeFams) {
+        const el = document.getElementById('thematic-summary');
+        if (!edges.length) { el.innerHTML = ''; return; }
+
+        // Count verses per group
+        const prefix = surahNum ? `${surahNum}:` : null;
+        const groupVerses = groups.map(() => new Set());
+        let totalVerses = 0;
+
+        for (const [vk, fams] of Object.entries(verseFams)) {
+            if (prefix && !vk.startsWith(prefix)) continue;
+            totalVerses++;
+            for (const f of fams) {
+                const gi = groups.findIndex(g => g.ids.includes(f));
+                if (gi >= 0) groupVerses[gi].add(vk);
+            }
+        }
+
+        // Rank groups by verse coverage
+        const groupRanks = groups.map((g, i) => ({
+            name: g.name, label: g.label,
+            count: groupVerses[i].size,
+            pct: Math.round((groupVerses[i].size / (totalVerses || 1)) * 100),
+            color: groupColors[i],
+        })).sort((a, b) => b.count - a.count);
+
+        // Top 5 strongest edges (most co-occurring family pairs)
+        const topEdges = [...edges].sort((a, b) => b.value - a.value).slice(0, 5);
+
+        // Compose topical text
+        const top3 = groupRanks.slice(0, 3);
+        const scope = surahNum ? surahList[surahNum - 1].name_en : 'the Quran';
+
+        let bodyParts = [];
+        bodyParts.push(`Across ${totalVerses} verses in ${scope}, the dominant thematic register is <strong>${top3[0].label}</strong> (${top3[0].pct}% of verses), followed by ${top3[1].label} (${top3[1].pct}%) and ${top3[2].label} (${top3[2].pct}%).`);
+
+        // Describe the strongest connections
+        if (topEdges.length) {
+            const pairDescs = topEdges.map(e => {
+                const fA = families[e.source], fB = families[e.target];
+                return `<span class="summary-pair">${fA.name_ar} ↔ ${fB.name_ar} (${e.value})</span>`;
+            });
+            bodyParts.push(`Strongest thematic bridges: ${pairDescs.join(' ')}`);
+        }
+
+        el.innerHTML = `<span class="summary-topic">الملخص الموضوعي</span>
+            <div class="summary-body">${bodyParts.join('<br>')}</div>`;
     }
 
     // ── Populate Controls ───────────────────────────
@@ -832,8 +910,33 @@ header {
         );
     }
 
+    // Focus: lock graph to show only one node's connections
+    function focusOnNode(id) {
+        focusedNode = id;
+        const connected = new Set([id]);
+        currentEdges.forEach(l => {
+            if (l.source === id) connected.add(l.target);
+            if (l.target === id) connected.add(l.source);
+        });
+        linkGroup.selectAll('path').each(function(l) {
+            const isConn = l.source === id || l.target === id;
+            d3.select(this)
+                .classed('link-active', isConn)
+                .classed('link-dimmed', !isConn);
+            if (isConn) d3.select(this).raise();
+        });
+        nodeGs.attr('opacity', nd => connected.has(nd.id) ? 1 : 0.08);
+    }
+
+    function clearFocus() {
+        focusedNode = null;
+        restoreLinks();
+        restoreNodes();
+    }
+
     nodeGs
         .on('mouseover', function(event, d) {
+            if (focusedNode) return; // don't override locked focus
             const id = d.id;
             const fam = families[id];
 
@@ -863,9 +966,17 @@ header {
             `);
         })
         .on('mousemove', positionTip)
-        .on('mouseout', function() { restoreLinks(); restoreNodes(); hideTip(); })
+        .on('mouseout', function() {
+            hideTip();
+            if (focusedNode) {
+                focusOnNode(focusedNode); // restore locked state
+            } else {
+                restoreLinks(); restoreNodes();
+            }
+        })
         .on('click', function(event, d) {
             event.stopPropagation();
+            focusOnNode(d.id);
             showFamilyDetail(d.id);
         });
 
@@ -898,7 +1009,7 @@ header {
     const detailTitle = document.getElementById('detail-title');
     document.getElementById('detail-close').addEventListener('click', closeDetail);
 
-    function closeDetail() { detailPanel.classList.remove('open'); }
+    function closeDetail() { detailPanel.classList.remove('open'); clearFocus(); }
 
     function renderVerseList(verses, limit) {
         const shown = verses.slice(0, limit);
@@ -965,6 +1076,19 @@ header {
         const fA = families[famA], fB = families[famB];
         const cA = groupColors[famGroup[famA] ?? 0], cB = groupColors[famGroup[famB] ?? 0];
         const shared = getSharedVerses(famA, famB, currentFvMap);
+
+        // Focus graph on the specific edge between these two families
+        focusedNode = famA; // track so hover doesn't override
+        linkGroup.selectAll('path').each(function(l) {
+            const isThis = (l.source === famA && l.target === famB) ||
+                           (l.source === famB && l.target === famA);
+            d3.select(this)
+                .classed('link-active', isThis)
+                .classed('link-dimmed', !isThis);
+            if (isThis) d3.select(this).raise();
+        });
+        const pair = new Set([famA, famB]);
+        nodeGs.attr('opacity', nd => pair.has(nd.id) ? 1 : 0.08);
 
         detailTitle.textContent = 'اتصال موضوعي';
         detailBody.innerHTML = `
