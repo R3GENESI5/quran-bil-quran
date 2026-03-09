@@ -186,10 +186,150 @@ header {
     50% { opacity: 1; }
 }
 
+/* ── Detail Panel ──────────────────────────────── */
+#detail-panel {
+    position: fixed;
+    top: 56px;
+    right: 0;
+    width: 420px;
+    height: calc(100vh - 56px);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    z-index: 90;
+    direction: rtl;
+}
+#detail-panel.open { transform: translateX(0); }
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+}
+.detail-header h3 { font-size: 1rem; color: var(--text-muted); }
+.detail-close {
+    width: 32px; height: 32px; border: none; background: none;
+    font-size: 1.5rem; color: var(--text-muted); cursor: pointer;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+}
+.detail-close:hover { background: var(--panel-bg); }
+
+.detail-body { padding: 18px; }
+
+.detail-families {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.detail-fam-badge {
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+}
+.detail-arrow {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+.detail-meaning {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 16px;
+    direction: ltr;
+}
+.detail-roots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.detail-root-chip {
+    padding: 3px 10px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.detail-root-chip:hover { border-color: var(--gold); background: rgba(184,134,11,0.08); }
+
+.detail-section-title {
+    font-family: var(--font-en);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    direction: ltr;
+    text-align: left;
+}
+.detail-verse {
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    background: var(--panel-bg);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.detail-verse:hover { background: rgba(184,134,11,0.08); }
+.detail-verse-key {
+    font-family: var(--font-en);
+    font-size: 0.7rem;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 2px;
+    direction: ltr;
+    display: inline-block;
+}
+.detail-verse-text {
+    font-size: 1rem;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.detail-count {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 12px;
+}
+.detail-show-more {
+    display: block; width: 100%; padding: 8px;
+    margin-top: 6px; background: var(--panel-bg);
+    border: 1px solid var(--border); border-radius: 6px;
+    font-family: var(--font-ar); font-size: 0.85rem;
+    color: var(--gold); cursor: pointer;
+}
+.detail-show-more:hover { background: rgba(184,134,11,0.08); }
+
 @media (max-width: 600px) {
     .page-intro h1 { font-size: 1.4rem; }
     .page-intro p { font-size: 0.8rem; }
     #chart { padding: 10px; }
+    #detail-panel { width: 100vw; }
 }
 </style>
 </head>
@@ -212,12 +352,21 @@ header {
 <div id="legend"></div>
 <div id="tooltip"></div>
 
+<div id="detail-panel">
+    <div class="detail-header">
+        <h3 id="detail-title">التفاصيل</h3>
+        <button class="detail-close" id="detail-close">&times;</button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+</div>
+
 <script>
 (async function() {
     // ── Load Data ──
-    const [families, rootsIndex] = await Promise.all([
+    const [families, rootsIndex, versesText] = await Promise.all([
         fetch('data/families.json').then(r => r.json()),
         fetch('data/roots_index.json').then(r => r.json()),
+        fetch('data/verses_text.json').then(r => r.json()),
     ]);
 
     // ── Build co-occurrence matrix ──
@@ -412,6 +561,160 @@ header {
             groups.selectAll('path').attr('opacity', 1);
         });
         legend.appendChild(chip);
+    });
+
+    // ── Detail Panel Logic ──
+    const detailPanel = document.getElementById('detail-panel');
+    const detailBody = document.getElementById('detail-body');
+    const detailTitle = document.getElementById('detail-title');
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+
+    function closeDetail() {
+        detailPanel.classList.remove('open');
+        ribbons.attr('fill-opacity', 0.45);
+        groups.selectAll('path').attr('opacity', 1);
+    }
+
+    // Build reverse map: family -> Set of verse keys
+    const famVerseMap = {};
+    familyIds.forEach(id => famVerseMap[id] = new Set());
+    for (const [root, data] of Object.entries(rootsIndex)) {
+        if (!data.fam) continue;
+        for (const f of data.fam) {
+            if (famVerseMap[f]) data.v.forEach(vk => famVerseMap[f].add(vk));
+        }
+    }
+
+    function getSharedVerses(famA, famB) {
+        const setA = famVerseMap[famA], setB = famVerseMap[famB];
+        const shared = [];
+        for (const vk of setA) { if (setB.has(vk)) shared.push(vk); }
+        // Sort by surah:ayah
+        shared.sort((a, b) => {
+            const [sa, aa] = a.split(':').map(Number);
+            const [sb, ab] = b.split(':').map(Number);
+            return sa - sb || aa - ab;
+        });
+        return shared;
+    }
+
+    function renderVerseList(verses, limit) {
+        const shown = verses.slice(0, limit);
+        let html = shown.map(vk => `
+            <a class="detail-verse" href="index.html#v-${vk}" target="_blank">
+                <div class="detail-verse-key">${vk}</div>
+                <div class="detail-verse-text">${versesText[vk] || ''}</div>
+            </a>
+        `).join('');
+        if (verses.length > limit) {
+            html += `<button class="detail-show-more" onclick="this.parentNode.innerHTML=window.__allVersesHTML">
+                عرض الكل (${verses.length})
+            </button>`;
+            window.__allVersesHTML = verses.map(vk => `
+                <a class="detail-verse" href="index.html#v-${vk}" target="_blank">
+                    <div class="detail-verse-key">${vk}</div>
+                    <div class="detail-verse-text">${versesText[vk] || ''}</div>
+                </a>
+            `).join('');
+        }
+        return html;
+    }
+
+    function showChordDetail(si, ti) {
+        const idA = familyIds[si], idB = familyIds[ti];
+        const fA = families[idA], fB = families[idB];
+        const shared = getSharedVerses(idA, idB);
+        const cA = colorScale(idA), cB = colorScale(idB);
+
+        detailTitle.textContent = 'اتصال موضوعي';
+        detailBody.innerHTML = `
+            <div class="detail-families">
+                <span class="detail-fam-badge" style="background:${cA}">${fA.name_ar}</span>
+                <span class="detail-arrow">↔</span>
+                <span class="detail-fam-badge" style="background:${cB}">${fB.name_ar}</span>
+            </div>
+            <div class="detail-meaning">${fA.meaning} ↔ ${fB.meaning}</div>
+            <div class="detail-count">${shared.length} shared verses</div>
+            <div class="detail-section-title">Roots — ${fA.name_ar}</div>
+            <div class="detail-roots">${fA.roots.map(r =>
+                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
+            <div class="detail-section-title">Roots — ${fB.name_ar}</div>
+            <div class="detail-roots">${fB.roots.map(r =>
+                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
+            <div class="detail-section-title">Shared Verses (${shared.length})</div>
+            <div id="detail-verses">${renderVerseList(shared, 20)}</div>
+        `;
+        // Highlight the relevant ribbons
+        ribbons.attr('fill-opacity', r =>
+            (r.source.index === si && r.target.index === ti) ||
+            (r.source.index === ti && r.target.index === si) ? 0.9 : 0.06
+        );
+        detailPanel.classList.add('open');
+    }
+
+    function showFamilyDetail(idx) {
+        const id = familyIds[idx];
+        const fam = families[id];
+        const c = colorScale(id);
+        // Get top connections sorted by shared count
+        const connections = [];
+        for (let j = 0; j < n; j++) {
+            if (j !== idx && matrix[idx][j] > 0) {
+                connections.push({ idx: j, count: matrix[idx][j] });
+            }
+        }
+        connections.sort((a, b) => b.count - a.count);
+
+        detailTitle.textContent = fam.name_ar;
+        detailBody.innerHTML = `
+            <div class="detail-families">
+                <span class="detail-fam-badge" style="background:${c}">${fam.name_ar}</span>
+            </div>
+            <div class="detail-meaning">${fam.meaning}</div>
+            <div class="detail-count">${fam.roots.length} roots · ${famVerseCounts[idx]} verses</div>
+            <div class="detail-section-title">Roots</div>
+            <div class="detail-roots">${fam.roots.map(r =>
+                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
+            <div class="detail-section-title">Top Connections</div>
+            ${connections.slice(0, 10).map(c => {
+                const cf = families[familyIds[c.idx]];
+                return `<div class="detail-verse" style="cursor:pointer" data-a="${idx}" data-b="${c.idx}">
+                    <div class="detail-verse-key">${c.count} shared verses</div>
+                    <div class="detail-verse-text" style="font-size:0.9rem">${cf.name_ar} — ${cf.meaning}</div>
+                </div>`;
+            }).join('')}
+        `;
+        // Click on a connection to drill into the chord
+        detailBody.querySelectorAll('[data-a]').forEach(el => {
+            el.addEventListener('click', () => {
+                showChordDetail(+el.dataset.a, +el.dataset.b);
+            });
+        });
+        // Highlight
+        ribbons.attr('fill-opacity', r =>
+            (r.source.index === idx || r.target.index === idx) ? 0.85 : 0.06
+        );
+        groups.selectAll('path').attr('opacity', d => d.index === idx ? 1 : 0.3);
+        detailPanel.classList.add('open');
+    }
+
+    // Attach click handlers to arcs
+    groups.selectAll('path').on('click', function(event, d) {
+        event.stopPropagation();
+        showFamilyDetail(d.index);
+    });
+
+    // Attach click handlers to ribbons
+    ribbons.on('click', function(event, d) {
+        event.stopPropagation();
+        showChordDetail(d.source.index, d.target.index);
+    });
+
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+        if (!detailPanel.contains(e.target) && detailPanel.classList.contains('open')) {
+            closeDetail();
+        }
     });
 
 })();
