@@ -98,6 +98,18 @@ body {
     white-space: nowrap;
 }
 
+.themes-link {
+    font-size: 0.8rem;
+    color: var(--gold);
+    text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.themes-link:hover { background: var(--gold-hover); }
+
 /* ── Main Layout ────────────────────────────────── */
 #main {
     min-height: calc(100vh - var(--header-h));

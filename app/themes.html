@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الأسر الدلالية — Thematic Connections</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root {
+    --bg: #faf6ef;
+    --surface: #fff8f0;
+    --text: #2c1810;
+    --text-muted: #7a6553;
+    --gold: #b8860b;
+    --border: #e0d5c5;
+    --panel-bg: #f7f1e8;
+    --font-ar: 'Amiri', serif;
+    --font-en: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: var(--font-ar);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+
+.logo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--gold);
+    text-decoration: none;
+}
+
+.header-title {
+    font-family: var(--font-en);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.back-link {
+    font-family: var(--font-en);
+    font-size: 0.85rem;
+    color: var(--gold);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.back-link:hover { background: var(--panel-bg); }
+
+.page-intro {
+    text-align: center;
+    padding: 32px 20px 0;
+    max-width: 700px;
+    margin: 0 auto;
+}
+.page-intro h1 {
+    font-size: 1.8rem;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+.page-intro p {
+    font-family: var(--font-en);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+#chart {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+#chart svg {
+    max-width: 100%;
+    height: auto;
+}
+
+#tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    font-size: 0.85rem;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.15s;
+    direction: rtl;
+    max-width: 300px;
+}
+#tooltip.visible { opacity: 1; }
+
+.tip-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 4px;
+}
+.tip-meaning {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    direction: ltr;
+    text-align: left;
+}
+.tip-stat {
+    font-family: var(--font-en);
+    font-size: 0.75rem;
+    color: var(--text);
+}
+.tip-chord-label {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    color: var(--text);
+    line-height: 1.5;
+    direction: ltr;
+    text-align: left;
+}
+
+#legend {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px 24px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+.legend-chip {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.legend-chip:hover {
+    border-color: var(--gold);
+    background: rgba(184, 134, 11, 0.08);
+}
+.legend-chip .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+#loading {
+    text-align: center;
+    padding: 80px 20px;
+    font-size: 1.4rem;
+    color: var(--gold);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+@media (max-width: 600px) {
+    .page-intro h1 { font-size: 1.4rem; }
+    .page-intro p { font-size: 0.8rem; }
+    #chart { padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">القرآن بالقرآن</a>
+    <span class="header-title">Thematic Chord Diagram</span>
+    <a href="index.html" class="back-link">← Reader</a>
+</header>
+
+<div class="page-intro">
+    <h1>الأسر الدلالية</h1>
+    <p>How Quranic themes interconnect. Each ribbon connects two semantic families
+       that co-occur in the same verses — thicker ribbons mean stronger thematic pairing.</p>
+</div>
+
+<div id="loading">جارٍ التحميل...</div>
+<div id="chart"></div>
+<div id="legend"></div>
+<div id="tooltip"></div>
+
+<script>
+(async function() {
+    // ── Load Data ──
+    const [families, rootsIndex] = await Promise.all([
+        fetch('data/families.json').then(r => r.json()),
+        fetch('data/roots_index.json').then(r => r.json()),
+    ]);
+
+    // ── Build co-occurrence matrix ──
+    const familyIds = Object.keys(families);
+    const n = familyIds.length;
+    const famIdx = {};
+    familyIds.forEach((id, i) => famIdx[id] = i);
+
+    // Map each verse to the set of families it touches
+    const verseFams = {};
+    for (const [root, data] of Object.entries(rootsIndex)) {
+        if (!data.fam || data.fam.length === 0) continue;
+        for (const vk of data.v) {
+            if (!verseFams[vk]) verseFams[vk] = new Set();
+            for (const f of data.fam) verseFams[vk].add(f);
+        }
+    }
+
+    // Count per-family verse totals
+    const famVerseCounts = new Array(n).fill(0);
+    for (const fams of Object.values(verseFams)) {
+        for (const f of fams) famVerseCounts[famIdx[f]]++;
+    }
+
+    // Build symmetric co-occurrence matrix
+    const matrix = Array.from({length: n}, () => new Array(n).fill(0));
+    for (const fams of Object.values(verseFams)) {
+        const list = [...fams];
+        for (let i = 0; i < list.length; i++) {
+            for (let j = i + 1; j < list.length; j++) {
+                const a = famIdx[list[i]], b = famIdx[list[j]];
+                matrix[a][b]++;
+                matrix[b][a]++;
+            }
+        }
+    }
+
+    // Add small diagonal so families with few cross-links still show
+    for (let i = 0; i < n; i++) {
+        const rowSum = matrix[i].reduce((a, b) => a + b, 0);
+        matrix[i][i] = Math.max(rowSum * 0.15, 5);
+    }
+
+    // ── Color palette (warm earthy tones) ──
+    const colorScale = d3.scaleOrdinal()
+        .domain(familyIds)
+        .range([
+            '#b8860b','#8b6914','#a0522d','#cd853f','#d4a04a',
+            '#4a7c5e','#6b8e5e','#2e7d6e','#5f9ea0','#4682b4',
+            '#8b4513','#a0694b','#c4a35a','#bdb76b','#d2b48c',
+            '#6a5acd','#7b68ae','#8b668b','#9e7c8d','#b07070',
+            '#c0713d','#d4883e','#778899','#708090','#556b2f',
+            '#8fbc8f','#bc8f8f','#cd5c5c','#e8967a','#daa520',
+            '#b5651d','#9b7653','#7c6550','#a89070','#c9b896',
+        ]);
+
+    // ── D3 Chord Diagram ──
+    const width = Math.min(900, window.innerWidth - 40);
+    const height = width;
+    const outerRadius = width / 2 - 100;
+    const innerRadius = outerRadius - 20;
+
+    const chord = d3.chord()
+        .padAngle(0.03)
+        .sortSubgroups(d3.descending)(matrix);
+
+    const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+    const ribbon = d3.ribbon().radius(innerRadius - 2);
+
+    document.getElementById('loading').style.display = 'none';
+
+    const svg = d3.select('#chart')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('width', width)
+        .attr('height', height)
+        .append('g')
+        .attr('transform', `translate(${width/2},${height/2})`);
+
+    const tooltip = document.getElementById('tooltip');
+
+    function showTip(html, event) {
+        tooltip.innerHTML = html;
+        tooltip.classList.add('visible');
+        const x = Math.min(event.clientX + 12, window.innerWidth - 320);
+        const y = Math.min(event.clientY + 12, window.innerHeight - 150);
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+    }
+    function hideTip() { tooltip.classList.remove('visible'); }
+
+    // ── Draw ribbons ──
+    const ribbons = svg.append('g')
+        .selectAll('path')
+        .data(chord.filter(d => d.source.index !== d.target.index))
+        .join('path')
+        .attr('d', ribbon)
+        .attr('fill', d => colorScale(familyIds[d.source.index]))
+        .attr('fill-opacity', 0.45)
+        .attr('stroke', 'none')
+        .on('mouseover', function(event, d) {
+            d3.select(this).attr('fill-opacity', 0.85);
+            const si = d.source.index, ti = d.target.index;
+            const shared = matrix[si][ti];
+            const fA = families[familyIds[si]], fB = families[familyIds[ti]];
+            showTip(`
+                <div class="tip-chord-label">
+                    <strong>${fA.name_ar}</strong> ↔ <strong>${fB.name_ar}</strong><br>
+                    ${shared} shared verses<br>
+                    <span style="color:#7a6553">${fA.meaning}</span> ↔
+                    <span style="color:#7a6553">${fB.meaning}</span>
+                </div>
+            `, event);
+        })
+        .on('mousemove', (event) => {
+            const x = Math.min(event.clientX + 12, window.innerWidth - 320);
+            const y = Math.min(event.clientY + 12, window.innerHeight - 150);
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        })
+        .on('mouseout', function() {
+            d3.select(this).attr('fill-opacity', 0.45);
+            hideTip();
+        });
+
+    // ── Draw arcs ──
+    const groups = svg.append('g')
+        .selectAll('g')
+        .data(chord.groups)
+        .join('g');
+
+    groups.append('path')
+        .attr('d', arc)
+        .attr('fill', d => colorScale(familyIds[d.index]))
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1)
+        .style('cursor', 'pointer')
+        .on('mouseover', function(event, d) {
+            // Dim all ribbons except those connected to this group
+            ribbons.attr('fill-opacity', r =>
+                (r.source.index === d.index || r.target.index === d.index) ? 0.85 : 0.06
+            );
+            const fam = families[familyIds[d.index]];
+            showTip(`
+                <div class="tip-title">${fam.name_ar}</div>
+                <div class="tip-meaning">${fam.meaning}</div>
+                <div class="tip-stat">${fam.roots.length} roots · ${famVerseCounts[d.index]} verses</div>
+            `, event);
+        })
+        .on('mousemove', (event) => {
+            const x = Math.min(event.clientX + 12, window.innerWidth - 320);
+            const y = Math.min(event.clientY + 12, window.innerHeight - 150);
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        })
+        .on('mouseout', function() {
+            ribbons.attr('fill-opacity', 0.45);
+            hideTip();
+        });
+
+    // ── Labels ──
+    groups.append('text')
+        .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
+        .attr('dy', '0.35em')
+        .attr('transform', d => {
+            const angle = d.angle * 180 / Math.PI - 90;
+            const flip = d.angle > Math.PI;
+            return `rotate(${angle}) translate(${outerRadius + 10}) ${flip ? 'rotate(180)' : ''}`;
+        })
+        .attr('text-anchor', d => d.angle > Math.PI ? 'end' : 'start')
+        .attr('font-family', 'Amiri, serif')
+        .attr('font-size', '11px')
+        .attr('fill', '#2c1810')
+        .text(d => families[familyIds[d.index]].name_ar);
+
+    // ── Legend ──
+    const legend = document.getElementById('legend');
+    familyIds.forEach((id, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'legend-chip';
+        chip.innerHTML = `<span class="dot" style="background:${colorScale(id)}"></span>${families[id].name_ar}`;
+        chip.addEventListener('mouseenter', () => {
+            ribbons.attr('fill-opacity', r =>
+                (r.source.index === i || r.target.index === i) ? 0.85 : 0.06
+            );
+            groups.selectAll('path').attr('opacity', d =>
+                d.index === i ? 1 : 0.3
+            );
+        });
+        chip.addEventListener('mouseleave', () => {
+            ribbons.attr('fill-opacity', 0.45);
+            groups.selectAll('path').attr('opacity', 1);
+        });
+        legend.appendChild(chip);
+    });
+
+})();
+</script>
+</body>
+</html>
