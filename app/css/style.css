@@ -12,7 +12,7 @@
     --green-light: rgba(74, 124, 94, 0.10);
     --border: #e0d5c5;
     --panel-bg: #f7f1e8;
-    --panel-width: 420px;
+    --panel-width: 50%;
     --header-h: 56px;
     --verse-num: #a08050;
     --highlight: rgba(184, 134, 11, 0.18);
@@ -101,10 +101,15 @@ body {
 /* ── Main Layout ────────────────────────────────── */
 #main {
     min-height: calc(100vh - var(--header-h));
+    transition: margin 0.3s ease;
+}
+
+.panel-open #main {
+    margin-left: var(--panel-width);
 }
 
 #reader {
-    padding: 32px 10% 80px;
+    padding: 32px 5% 80px;
 }
 
 /* ── Surah Title ────────────────────────────────── */
@@ -194,13 +199,13 @@ body {
 #root-panel {
     position: fixed;
     top: var(--header-h);
-    left: auto;
-    right: 0;
+    left: 0;
+    right: auto;
     width: var(--panel-width);
     height: calc(100vh - var(--header-h));
     background: var(--panel-bg);
-    border-left: 1px solid var(--border);
-    transform: translateX(100%);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
     z-index: 50;
@@ -459,6 +464,10 @@ body {
     #root-panel {
         top: 0;
         height: 100vh;
+    }
+
+    .panel-open #main {
+        margin-left: 0;
     }
 
     #reader { padding: 20px 5% 60px; }
