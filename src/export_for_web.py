@@ -78,6 +78,16 @@ def fetch_surah_list():
     return surahs
 
 
+def _is_pause_mark(token):
+    """Check if a whitespace-separated token is a Uthmani pause/stop mark.
+
+    These marks (ۛ ۚ ۙ ۖ ۗ ۘ ۜ ۩) appear as separate tokens in the Uthmani
+    text but are NOT counted as word positions in the morphology corpus.
+    Skipping them keeps position indices aligned.
+    """
+    return len(token) == 1 and token in "\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06E9"
+
+
 def export_surah_files(verses, word_roots):
     """Export per-surah JSON files with word-level root mapping."""
     surahs_dir = os.path.join(APP_DATA_DIR, "surahs")
@@ -92,8 +102,14 @@ def export_surah_files(verses, word_roots):
         words = text.split()
 
         word_data = []
-        for i, word_text in enumerate(words, 1):
-            root = vk_roots.get(i, None)
+        morph_pos = 0  # position counter aligned with morphology corpus
+        for word_text in words:
+            if _is_pause_mark(word_text):
+                # Pause marks are not in the morphology data — no position increment
+                word_data.append({"t": word_text})
+                continue
+            morph_pos += 1
+            root = vk_roots.get(morph_pos, None)
             entry = {"t": word_text}
             if root:
                 entry["r"] = root

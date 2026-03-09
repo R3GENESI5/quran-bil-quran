@@ -367,6 +367,99 @@ body {
     color: var(--gold);
 }
 
+/* ── Mufradat (Classical Lexicon) ───────────────── */
+.mufradat-root {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 8px;
+}
+
+.mufradat-text {
+    font-size: 1.05rem;
+    line-height: 2;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.mufradat-verses-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.mufradat-verse-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    direction: ltr;
+}
+
+.mufradat-verse-chip {
+    font-family: var(--font-en);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--verse-num);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.mufradat-verse-chip:hover {
+    background: var(--gold-light);
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.mufradat-verse-more {
+    font-family: var(--font-en);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    color: var(--text-muted);
+}
+
+/* ── Furuq (Linguistic Distinctions) ────────────── */
+.furuq-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+}
+.furuq-card:hover {
+    border-color: var(--border);
+}
+
+.furuq-pair {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 6px;
+}
+
+.furuq-text {
+    font-size: 0.95rem;
+    line-height: 1.9;
+    color: var(--text);
+}
+
+.furuq-more {
+    font-family: var(--font-en);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 6px;
+}
+
 /* ── Connected Verses ───────────────────────────── */
 .connected-group {
     margin-bottom: 16px;

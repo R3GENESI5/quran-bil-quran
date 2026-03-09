@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الأسر الدلالية — Thematic Connections</title>
+<title>الأسر الدلالية — Thematic Map</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
@@ -13,6 +13,7 @@
     --text: #2c1810;
     --text-muted: #7a6553;
     --gold: #b8860b;
+    --gold-light: rgba(184, 134, 11, 0.12);
     --border: #e0d5c5;
     --panel-bg: #f7f1e8;
     --font-ar: 'Amiri', serif;
@@ -30,189 +31,123 @@ body {
 }
 
 header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    padding: 0 24px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; padding: 0 24px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
     backdrop-filter: blur(8px);
 }
-
-.logo {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--gold);
-    text-decoration: none;
-}
-
-.header-title {
-    font-family: var(--font-en);
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
+.logo { font-size: 1.3rem; font-weight: 700; color: var(--gold); text-decoration: none; }
+.header-title { font-family: var(--font-en); font-size: 0.85rem; color: var(--text-muted); }
 .back-link {
-    font-family: var(--font-en);
-    font-size: 0.85rem;
-    color: var(--gold);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 6px;
-    transition: background 0.15s;
+    font-family: var(--font-en); font-size: 0.85rem; color: var(--gold);
+    text-decoration: none; border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 6px; transition: background 0.15s;
 }
 .back-link:hover { background: var(--panel-bg); }
 
 .page-intro {
-    text-align: center;
-    padding: 32px 20px 0;
-    max-width: 700px;
-    margin: 0 auto;
+    text-align: center; padding: 24px 20px 0;
+    max-width: 700px; margin: 0 auto;
 }
-.page-intro h1 {
-    font-size: 1.8rem;
-    color: var(--text);
-    margin-bottom: 8px;
-}
+.page-intro h1 { font-size: 1.8rem; color: var(--text); margin-bottom: 6px; }
 .page-intro p {
-    font-family: var(--font-en);
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    line-height: 1.6;
+    font-family: var(--font-en); font-size: 0.88rem;
+    color: var(--text-muted); line-height: 1.6;
 }
 
-#chart {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
+/* ── Controls ─────────────────────────────────── */
+.controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px; padding: 16px 20px 4px;
+    max-width: 800px; margin: 0 auto; flex-wrap: wrap;
+}
+.control-group {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-en); font-size: 0.8rem; color: var(--text-muted);
+}
+.control-group select {
+    font-family: var(--font-ar); font-size: 0.85rem;
+    padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--surface);
+    color: var(--text); cursor: pointer;
+}
+.control-group input[type=range] { width: 100px; cursor: pointer; }
+#stats {
+    text-align: center; font-family: var(--font-en);
+    font-size: 0.78rem; color: var(--text-muted); padding: 4px 0 0;
 }
 
-#chart svg {
-    max-width: 100%;
-    height: auto;
+/* ── Chart ────────────────────────────────────── */
+#chart { display: flex; justify-content: center; padding: 10px; }
+#chart svg { max-width: 100%; height: auto; }
+.link { fill: none; pointer-events: none; }
+.link-active { stroke: #b8860b !important; stroke-opacity: 0.8 !important; }
+.link-dimmed { stroke-opacity: 0.008 !important; }
+.node-label {
+    font-family: 'Amiri', serif; font-size: 12px;
+    cursor: pointer; transition: opacity 0.15s;
 }
+.node-label:hover { font-weight: 700; }
+.node-dot { transition: opacity 0.15s; cursor: pointer; }
 
-#tooltip {
-    position: fixed;
-    pointer-events: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    font-size: 0.85rem;
-    z-index: 200;
-    opacity: 0;
-    transition: opacity 0.15s;
-    direction: rtl;
-    max-width: 300px;
-}
-#tooltip.visible { opacity: 1; }
-
-.tip-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--gold);
-    margin-bottom: 4px;
-}
-.tip-meaning {
-    font-family: var(--font-en);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-    direction: ltr;
-    text-align: left;
-}
-.tip-stat {
-    font-family: var(--font-en);
-    font-size: 0.75rem;
-    color: var(--text);
-}
-.tip-chord-label {
-    font-family: var(--font-en);
-    font-size: 0.8rem;
-    color: var(--text);
-    line-height: 1.5;
-    direction: ltr;
-    text-align: left;
-}
-
+/* ── Legend ────────────────────────────────────── */
 #legend {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 10px 24px 40px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
+    max-width: 800px; margin: 0 auto;
+    padding: 8px 24px 24px;
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
 }
 .legend-chip {
-    font-size: 0.8rem;
-    padding: 3px 10px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
+    font-size: 0.8rem; padding: 3px 10px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.legend-chip:hover {
-    border-color: var(--gold);
-    background: rgba(184, 134, 11, 0.08);
-}
+.legend-chip:hover { border-color: var(--gold); background: var(--gold-light); }
 .legend-chip .dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-left: 5px;
-    vertical-align: middle;
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-left: 5px; vertical-align: middle;
 }
 
+/* ── Tooltip ──────────────────────────────────── */
+#tooltip {
+    position: fixed; pointer-events: none;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    font-size: 0.85rem; z-index: 200;
+    opacity: 0; transition: opacity 0.15s;
+    direction: rtl; max-width: 300px;
+}
+#tooltip.visible { opacity: 1; }
+.tip-title { font-size: 1.1rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.tip-meaning {
+    font-family: var(--font-en); font-size: 0.8rem;
+    color: var(--text-muted); margin-bottom: 4px; direction: ltr; text-align: left;
+}
+.tip-stat { font-family: var(--font-en); font-size: 0.75rem; color: var(--text); }
+.tip-roots { font-size: 0.85rem; color: var(--text); margin-top: 4px; word-spacing: 4px; }
+
+/* ── Loading ──────────────────────────────────── */
 #loading {
-    text-align: center;
-    padding: 80px 20px;
-    font-size: 1.4rem;
-    color: var(--gold);
+    text-align: center; padding: 80px 20px;
+    font-size: 1.4rem; color: var(--gold);
     animation: pulse 1.5s ease-in-out infinite;
 }
-@keyframes pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-}
+@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-/* ── Detail Panel ──────────────────────────────── */
+/* ── Detail Panel ─────────────────────────────── */
 #detail-panel {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    width: 420px;
-    height: calc(100vh - 56px);
-    background: var(--surface);
-    border-left: 1px solid var(--border);
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    overflow-y: auto;
-    z-index: 90;
-    direction: rtl;
+    position: fixed; top: 56px; right: 0;
+    width: 420px; height: calc(100vh - 56px);
+    background: var(--surface); border-left: 1px solid var(--border);
+    transform: translateX(100%); transition: transform 0.3s ease;
+    overflow-y: auto; z-index: 90; direction: rtl;
 }
 #detail-panel.open { transform: translateX(0); }
-
 .detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--surface);
-    z-index: 1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
 }
 .detail-header h3 { font-size: 1rem; color: var(--text-muted); }
 .detail-close {
@@ -221,134 +156,69 @@ header {
     border-radius: 6px; display: flex; align-items: center; justify-content: center;
 }
 .detail-close:hover { background: var(--panel-bg); }
-
 .detail-body { padding: 18px; }
-
-.detail-families {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
 .detail-fam-badge {
-    padding: 6px 14px;
-    border-radius: 16px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #fff;
-    text-align: center;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.detail-arrow {
-    font-size: 1.2rem;
-    color: var(--text-muted);
+    display: inline-block; padding: 6px 14px; border-radius: 16px;
+    font-size: 1rem; font-weight: 700; color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4); margin: 2px;
 }
 .detail-meaning {
-    font-family: var(--font-en);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    text-align: center;
-    margin-bottom: 16px;
-    direction: ltr;
+    font-family: var(--font-en); font-size: 0.8rem; color: var(--text-muted);
+    text-align: center; margin: 8px 0 12px; direction: ltr;
 }
 .detail-roots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 16px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    justify-content: center; margin-bottom: 12px;
 }
 .detail-root-chip {
-    padding: 3px 10px;
-    background: var(--panel-bg);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.15s;
+    padding: 3px 10px; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 14px; font-size: 0.9rem; cursor: pointer; transition: all 0.15s;
 }
-.detail-root-chip:hover { border-color: var(--gold); background: rgba(184,134,11,0.08); }
-
+.detail-root-chip:hover { border-color: var(--gold); background: var(--gold-light); }
 .detail-section-title {
-    font-family: var(--font-en);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--gold);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 16px 0 8px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    direction: ltr;
-    text-align: left;
-}
-.detail-verse {
-    padding: 8px 10px;
-    margin-bottom: 4px;
-    background: var(--panel-bg);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-.detail-verse:hover { background: rgba(184,134,11,0.08); }
-.detail-verse-key {
-    font-family: var(--font-en);
-    font-size: 0.7rem;
-    color: var(--gold);
-    font-weight: 600;
-    margin-bottom: 2px;
-    direction: ltr;
-    display: inline-block;
-}
-.detail-verse-text {
-    font-size: 1rem;
-    line-height: 1.7;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-family: var(--font-en); font-size: 0.75rem; font-weight: 600;
+    color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 16px 0 8px; padding-top: 12px; border-top: 1px solid var(--border);
+    direction: ltr; text-align: left;
 }
 .detail-count {
-    font-family: var(--font-en);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    text-align: center;
-    margin-bottom: 12px;
+    font-family: var(--font-en); font-size: 0.8rem;
+    color: var(--text-muted); text-align: center; margin-bottom: 12px;
 }
-.detail-show-more {
-    display: block; width: 100%; padding: 8px;
-    margin-top: 6px; background: var(--panel-bg);
-    border: 1px solid var(--border); border-radius: 6px;
-    font-family: var(--font-ar); font-size: 0.85rem;
-    color: var(--gold); cursor: pointer;
+.detail-verse {
+    display: block; text-decoration: none; color: inherit;
+    padding: 8px 10px; margin-bottom: 4px;
+    background: var(--panel-bg); border-radius: 6px;
+    cursor: pointer; transition: background 0.15s;
 }
-.detail-show-more:hover { background: rgba(184,134,11,0.08); }
-
-/* ── Root Detail View ────────────────────────── */
-.root-back-row { text-align: center; margin-bottom: 8px; }
-.root-back-btn { width: auto; display: inline-block; margin-bottom: 12px; }
-.root-letters {
-    text-align: center; font-size: 2.6rem; font-weight: 700;
-    color: var(--gold); letter-spacing: 4px; margin-bottom: 4px;
+.detail-verse:hover { background: var(--gold-light); }
+.detail-verse-key {
+    font-family: var(--font-en); font-size: 0.7rem; color: var(--gold);
+    font-weight: 600; margin-bottom: 2px; direction: ltr; display: inline-block;
 }
-.root-buckwalter {
-    text-align: center; font-family: var(--font-en); font-size: 0.85rem;
-    color: var(--text-muted); margin-bottom: 12px; direction: ltr;
+.detail-verse-text {
+    font-size: 1rem; line-height: 1.7;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
 }
-.root-meaning-box {
-    font-family: var(--font-en); font-size: 0.9rem; line-height: 1.6;
-    padding: 12px; background: var(--panel-bg); border-radius: 6px;
-    margin-bottom: 12px; direction: ltr; text-align: left;
+.detail-connection {
+    padding: 8px 10px; margin-bottom: 4px;
+    background: var(--panel-bg); border-radius: 6px;
+    cursor: pointer; transition: background 0.15s;
 }
-.root-families { text-align: center; margin-bottom: 16px; }
+.detail-connection:hover { background: var(--gold-light); }
+.detail-connection-name { font-size: 0.95rem; font-weight: 700; }
+.detail-connection-count {
+    font-family: var(--font-en); font-size: 0.7rem; color: var(--text-muted);
+    direction: ltr; display: inline-block; margin-left: 6px;
+}
 
 @media (max-width: 600px) {
     .page-intro h1 { font-size: 1.4rem; }
     .page-intro p { font-size: 0.8rem; }
-    #chart { padding: 10px; }
+    #chart { padding: 5px; }
     #detail-panel { width: 100vw; }
+    .controls { gap: 10px; padding: 10px 10px 4px; }
 }
 </style>
 </head>
@@ -356,15 +226,29 @@ header {
 
 <header>
     <a href="index.html" class="logo">القرآن بالقرآن</a>
-    <span class="header-title">Thematic Chord Diagram</span>
-    <a href="index.html" class="back-link">← Reader</a>
+    <span class="header-title">Force-Directed Edge Bundling</span>
+    <a id="back-link" href="index.html" class="back-link">← Reader</a>
 </header>
 
 <div class="page-intro">
     <h1>الأسر الدلالية</h1>
-    <p>How Quranic themes interconnect. Each ribbon connects two semantic families
-       that co-occur in the same verses — thicker ribbons mean stronger thematic pairing.</p>
+    <p>Thematic connections across the Quran. Edges between co-occurring semantic families
+       are bundled using force-directed simulation — bundling emerges from the data itself.</p>
 </div>
+
+<div class="controls">
+    <div class="control-group">
+        <label for="surah-filter">Surah:</label>
+        <select id="surah-filter">
+            <option value="all">القرآن كاملاً — All</option>
+        </select>
+    </div>
+    <div class="control-group">
+        <label for="bundling">Bundling:</label>
+        <input type="range" id="bundling" min="0" max="100" value="85">
+    </div>
+</div>
+<div id="stats"></div>
 
 <div id="loading">جارٍ التحميل...</div>
 <div id="chart"></div>
@@ -381,235 +265,101 @@ header {
 
 <script>
 (async function() {
-    // ── Load Data ──
-    const [families, rootsIndex, versesText] = await Promise.all([
+    // ── Load Data ────────────────────────────────────
+    const [families, rootsIndex, versesText, surahList] = await Promise.all([
         fetch('data/families.json').then(r => r.json()),
         fetch('data/roots_index.json').then(r => r.json()),
         fetch('data/verses_text.json').then(r => r.json()),
+        fetch('data/surah_list.json').then(r => r.json()),
     ]);
 
-    // ── Build co-occurrence matrix ──
+    // ── Family Setup ────────────────────────────────
     const familyIds = Object.keys(families);
     const n = familyIds.length;
     const famIdx = {};
     familyIds.forEach((id, i) => famIdx[id] = i);
 
-    // Map each verse to the set of families it touches
+    // ── Visual Groups (for node coloring only, NOT bundling) ──
+    const groups = [
+        { name: 'الإلهيات', label: 'Theology', ids: ['creation','knowledge','guidance','revelation','prophets_messengers','covenant_promise'] },
+        { name: 'الأخلاق', label: 'Ethics', ids: ['truth_falsehood','justice','patience_gratitude','pride_humility','repentance_return','purity'] },
+        { name: 'الآخرة', label: 'Eschatology', ids: ['life_death','paradise','hellfire','punishment','mercy','fear_hope'] },
+        { name: 'الطبيعة', label: 'Nature', ids: ['earth_sky','water','plants_agriculture','animals','light_darkness','time'] },
+        { name: 'الإنسان', label: 'Human', ids: ['worship','speech_communication','heart_soul','family_kinship','body','movement_journey'] },
+        { name: 'المجتمع', label: 'Society', ids: ['fighting','wealth','deception_hypocrisy','provision','seeing_hearing'] },
+    ];
+    const groupColors = ['#b8860b','#4a7c5e','#8b4513','#2e7d6e','#6a5acd','#cd5c5c'];
+
+    // Filter to existing families only
+    groups.forEach(g => { g.ids = g.ids.filter(id => families[id]); });
+
+    // Ordered family list: arrange by group for circular layout
+    const orderedIds = [];
+    groups.forEach(g => g.ids.forEach(id => orderedIds.push(id)));
+    // Add any families not in a group
+    familyIds.forEach(id => { if (!orderedIds.includes(id)) orderedIds.push(id); });
+
+    // Family → group index
+    const famGroup = {};
+    groups.forEach((g, gi) => g.ids.forEach(id => { famGroup[id] = gi; }));
+
+    // ── Verse → Families Map ────────────────────────
     const verseFams = {};
     for (const [root, data] of Object.entries(rootsIndex)) {
-        if (!data.fam || data.fam.length === 0) continue;
+        if (!data.fam || !data.fam.length) continue;
         for (const vk of data.v) {
             if (!verseFams[vk]) verseFams[vk] = new Set();
-            for (const f of data.fam) verseFams[vk].add(f);
-        }
-    }
-
-    // Count per-family verse totals
-    const famVerseCounts = new Array(n).fill(0);
-    for (const fams of Object.values(verseFams)) {
-        for (const f of fams) famVerseCounts[famIdx[f]]++;
-    }
-
-    // Build symmetric co-occurrence matrix
-    const matrix = Array.from({length: n}, () => new Array(n).fill(0));
-    for (const fams of Object.values(verseFams)) {
-        const list = [...fams];
-        for (let i = 0; i < list.length; i++) {
-            for (let j = i + 1; j < list.length; j++) {
-                const a = famIdx[list[i]], b = famIdx[list[j]];
-                matrix[a][b]++;
-                matrix[b][a]++;
+            for (const f of data.fam) {
+                if (families[f]) verseFams[vk].add(f);
             }
         }
     }
 
-    // Add small diagonal so families with few cross-links still show
-    for (let i = 0; i < n; i++) {
-        const rowSum = matrix[i].reduce((a, b) => a + b, 0);
-        matrix[i][i] = Math.max(rowSum * 0.15, 5);
-    }
+    // ── Co-occurrence Builder ────────────────────────
+    function buildCooccurrence(surahNum) {
+        const matrix = Array.from({length: n}, () => new Array(n).fill(0));
+        const activeFams = new Set();
+        const prefix = surahNum ? `${surahNum}:` : null;
 
-    // ── Color palette (warm earthy tones) ──
-    const colorScale = d3.scaleOrdinal()
-        .domain(familyIds)
-        .range([
-            '#b8860b','#8b6914','#a0522d','#cd853f','#d4a04a',
-            '#4a7c5e','#6b8e5e','#2e7d6e','#5f9ea0','#4682b4',
-            '#8b4513','#a0694b','#c4a35a','#bdb76b','#d2b48c',
-            '#6a5acd','#7b68ae','#8b668b','#9e7c8d','#b07070',
-            '#c0713d','#d4883e','#778899','#708090','#556b2f',
-            '#8fbc8f','#bc8f8f','#cd5c5c','#e8967a','#daa520',
-            '#b5651d','#9b7653','#7c6550','#a89070','#c9b896',
-        ]);
-
-    // ── D3 Chord Diagram ──
-    const width = Math.min(900, window.innerWidth - 40);
-    const height = width;
-    const outerRadius = width / 2 - 100;
-    const innerRadius = outerRadius - 20;
-
-    const chord = d3.chord()
-        .padAngle(0.03)
-        .sortSubgroups(d3.descending)(matrix);
-
-    const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
-    const ribbon = d3.ribbon().radius(innerRadius - 2);
-
-    document.getElementById('loading').style.display = 'none';
-
-    const svg = d3.select('#chart')
-        .append('svg')
-        .attr('viewBox', `0 0 ${width} ${height}`)
-        .attr('width', width)
-        .attr('height', height)
-        .append('g')
-        .attr('transform', `translate(${width/2},${height/2})`);
-
-    const tooltip = document.getElementById('tooltip');
-
-    function showTip(html, event) {
-        tooltip.innerHTML = html;
-        tooltip.classList.add('visible');
-        const x = Math.min(event.clientX + 12, window.innerWidth - 320);
-        const y = Math.min(event.clientY + 12, window.innerHeight - 150);
-        tooltip.style.left = x + 'px';
-        tooltip.style.top = y + 'px';
-    }
-    function hideTip() { tooltip.classList.remove('visible'); }
-
-    // ── Draw ribbons ──
-    const ribbons = svg.append('g')
-        .selectAll('path')
-        .data(chord.filter(d => d.source.index !== d.target.index))
-        .join('path')
-        .attr('d', ribbon)
-        .attr('fill', d => colorScale(familyIds[d.source.index]))
-        .attr('fill-opacity', 0.45)
-        .attr('stroke', 'none')
-        .on('mouseover', function(event, d) {
-            d3.select(this).attr('fill-opacity', 0.85);
-            const si = d.source.index, ti = d.target.index;
-            const shared = matrix[si][ti];
-            const fA = families[familyIds[si]], fB = families[familyIds[ti]];
-            showTip(`
-                <div class="tip-chord-label">
-                    <strong>${fA.name_ar}</strong> ↔ <strong>${fB.name_ar}</strong><br>
-                    ${shared} shared verses<br>
-                    <span style="color:#7a6553">${fA.meaning}</span> ↔
-                    <span style="color:#7a6553">${fB.meaning}</span>
-                </div>
-            `, event);
-        })
-        .on('mousemove', (event) => {
-            const x = Math.min(event.clientX + 12, window.innerWidth - 320);
-            const y = Math.min(event.clientY + 12, window.innerHeight - 150);
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
-        })
-        .on('mouseout', function() {
-            d3.select(this).attr('fill-opacity', 0.45);
-            hideTip();
-        });
-
-    // ── Draw arcs ──
-    const groups = svg.append('g')
-        .selectAll('g')
-        .data(chord.groups)
-        .join('g');
-
-    groups.append('path')
-        .attr('d', arc)
-        .attr('fill', d => colorScale(familyIds[d.index]))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1)
-        .style('cursor', 'pointer')
-        .on('mouseover', function(event, d) {
-            // Dim all ribbons except those connected to this group
-            ribbons.attr('fill-opacity', r =>
-                (r.source.index === d.index || r.target.index === d.index) ? 0.85 : 0.06
-            );
-            const fam = families[familyIds[d.index]];
-            showTip(`
-                <div class="tip-title">${fam.name_ar}</div>
-                <div class="tip-meaning">${fam.meaning}</div>
-                <div class="tip-stat">${fam.roots.length} roots · ${famVerseCounts[d.index]} verses</div>
-            `, event);
-        })
-        .on('mousemove', (event) => {
-            const x = Math.min(event.clientX + 12, window.innerWidth - 320);
-            const y = Math.min(event.clientY + 12, window.innerHeight - 150);
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
-        })
-        .on('mouseout', function() {
-            ribbons.attr('fill-opacity', 0.45);
-            hideTip();
-        });
-
-    // ── Labels ──
-    groups.append('text')
-        .each(d => { d.angle = (d.startAngle + d.endAngle) / 2; })
-        .attr('dy', '0.35em')
-        .attr('transform', d => {
-            const angle = d.angle * 180 / Math.PI - 90;
-            const flip = d.angle > Math.PI;
-            return `rotate(${angle}) translate(${outerRadius + 10}) ${flip ? 'rotate(180)' : ''}`;
-        })
-        .attr('text-anchor', d => d.angle > Math.PI ? 'end' : 'start')
-        .attr('font-family', 'Amiri, serif')
-        .attr('font-size', '11px')
-        .attr('fill', '#2c1810')
-        .text(d => families[familyIds[d.index]].name_ar);
-
-    // ── Legend ──
-    const legend = document.getElementById('legend');
-    familyIds.forEach((id, i) => {
-        const chip = document.createElement('span');
-        chip.className = 'legend-chip';
-        chip.innerHTML = `<span class="dot" style="background:${colorScale(id)}"></span>${families[id].name_ar}`;
-        chip.addEventListener('mouseenter', () => {
-            ribbons.attr('fill-opacity', r =>
-                (r.source.index === i || r.target.index === i) ? 0.85 : 0.06
-            );
-            groups.selectAll('path').attr('opacity', d =>
-                d.index === i ? 1 : 0.3
-            );
-        });
-        chip.addEventListener('mouseleave', () => {
-            ribbons.attr('fill-opacity', 0.45);
-            groups.selectAll('path').attr('opacity', 1);
-        });
-        chip.addEventListener('click', () => showFamilyDetail(i));
-        legend.appendChild(chip);
-    });
-
-    // ── Detail Panel Logic ──
-    const detailPanel = document.getElementById('detail-panel');
-    const detailBody = document.getElementById('detail-body');
-    const detailTitle = document.getElementById('detail-title');
-    document.getElementById('detail-close').addEventListener('click', closeDetail);
-
-    function closeDetail() {
-        detailPanel.classList.remove('open');
-        ribbons.attr('fill-opacity', 0.45);
-        groups.selectAll('path').attr('opacity', 1);
-    }
-
-    // Build reverse map: family -> Set of verse keys
-    const famVerseMap = {};
-    familyIds.forEach(id => famVerseMap[id] = new Set());
-    for (const [root, data] of Object.entries(rootsIndex)) {
-        if (!data.fam) continue;
-        for (const f of data.fam) {
-            if (famVerseMap[f]) data.v.forEach(vk => famVerseMap[f].add(vk));
+        for (const [vk, fams] of Object.entries(verseFams)) {
+            if (prefix && !vk.startsWith(prefix)) continue;
+            const list = [...fams];
+            for (const f of list) activeFams.add(f);
+            for (let i = 0; i < list.length; i++) {
+                for (let j = i + 1; j < list.length; j++) {
+                    const a = famIdx[list[i]], b = famIdx[list[j]];
+                    if (a !== undefined && b !== undefined) {
+                        matrix[a][b]++;
+                        matrix[b][a]++;
+                    }
+                }
+            }
         }
+        return { matrix, activeFams };
     }
 
-    function getSharedVerses(famA, famB) {
-        const setA = famVerseMap[famA], setB = famVerseMap[famB];
+    // ── Family Verse Map (for detail panel) ─────────
+    function buildFamVerseMap(surahNum) {
+        const map = {};
+        familyIds.forEach(id => map[id] = new Set());
+        const prefix = surahNum ? `${surahNum}:` : null;
+        for (const [root, data] of Object.entries(rootsIndex)) {
+            if (!data.fam) continue;
+            for (const f of data.fam) {
+                if (!map[f]) continue;
+                for (const vk of data.v) {
+                    if (!prefix || vk.startsWith(prefix)) map[f].add(vk);
+                }
+            }
+        }
+        return map;
+    }
+
+    function getSharedVerses(famA, famB, fvMap) {
         const shared = [];
-        for (const vk of setA) { if (setB.has(vk)) shared.push(vk); }
-        // Sort by surah:ayah
+        for (const vk of fvMap[famA]) {
+            if (fvMap[famB].has(vk)) shared.push(vk);
+        }
         shared.sort((a, b) => {
             const [sa, aa] = a.split(':').map(Number);
             const [sb, ab] = b.split(':').map(Number);
@@ -618,184 +368,624 @@ header {
         return shared;
     }
 
-    let _verseListId = 0;
+    // ══════════════════════════════════════════════════
+    //  FORCE-DIRECTED EDGE BUNDLING (Holten & Wijk 2009)
+    // ══════════════════════════════════════════════════
+
+    // ── Circular Node Layout ────────────────────────
+    const width = Math.min(960, window.innerWidth - 20);
+    const height = width;
+    const cx = width / 2, cy = height / 2;
+    const radius = width / 2 - 130;
+
+    // Place nodes around circle in group order
+    const nodePositions = {};
+    orderedIds.forEach((id, i) => {
+        const angle = (2 * Math.PI * i) / orderedIds.length - Math.PI / 2;
+        nodePositions[id] = {
+            x: cx + radius * Math.cos(angle),
+            y: cy + radius * Math.sin(angle),
+            angle: angle,
+            id: id,
+        };
+    });
+
+    // ── Edge Compatibility (Holten & Wijk 2009) ─────
+    function vecSub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+    function vecLen(v) { return Math.sqrt(v.x * v.x + v.y * v.y); }
+    function vecDot(a, b) { return a.x * b.x + a.y * b.y; }
+
+    function edgeMidpoint(p0, p1) {
+        return { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    }
+
+    function angleCompatibility(P, Q) {
+        const dP = vecSub(P[P.length-1], P[0]);
+        const dQ = vecSub(Q[Q.length-1], Q[0]);
+        const lenP = vecLen(dP), lenQ = vecLen(dQ);
+        if (lenP < 1e-6 || lenQ < 1e-6) return 0;
+        return Math.abs(vecDot(dP, dQ) / (lenP * lenQ));
+    }
+
+    function scaleCompatibility(P, Q) {
+        const lP = vecLen(vecSub(P[P.length-1], P[0]));
+        const lQ = vecLen(vecSub(Q[Q.length-1], Q[0]));
+        const avg = (lP + lQ) / 2;
+        if (avg < 1e-6) return 0;
+        return 2 / (avg / Math.min(lP, lQ) + Math.max(lP, lQ) / avg);
+    }
+
+    function positionCompatibility(P, Q) {
+        const lAvg = (vecLen(vecSub(P[P.length-1], P[0])) + vecLen(vecSub(Q[Q.length-1], Q[0]))) / 2;
+        if (lAvg < 1e-6) return 0;
+        const midP = edgeMidpoint(P[0], P[P.length-1]);
+        const midQ = edgeMidpoint(Q[0], Q[Q.length-1]);
+        return lAvg / (lAvg + vecLen(vecSub(midP, midQ)));
+    }
+
+    function edgeCompatibility(P, Q) {
+        return angleCompatibility(P, Q) * scaleCompatibility(P, Q) * positionCompatibility(P, Q);
+    }
+
+    // ── FDEB Subdivision ────────────────────────────
+    function subdivideEdge(pts) {
+        const newPts = [pts[0]];
+        for (let i = 0; i < pts.length - 1; i++) {
+            const a = pts[i], b = pts[i + 1];
+            newPts.push({ x: (2*a.x + b.x) / 3, y: (2*a.y + b.y) / 3 });
+            newPts.push({ x: (a.x + 2*b.x) / 3, y: (a.y + 2*b.y) / 3 });
+        }
+        newPts.push(pts[pts.length - 1]);
+        return newPts;
+    }
+
+    function initEdgePoints(src, tgt) {
+        // Start with just endpoints + 1 subdivision point
+        return [
+            { x: src.x, y: src.y },
+            { x: (src.x + tgt.x) / 2, y: (src.y + tgt.y) / 2 },
+            { x: tgt.x, y: tgt.y },
+        ];
+    }
+
+    // ── FDEB Simulation ─────────────────────────────
+    function runFDEB(edges) {
+        if (edges.length === 0) return edges;
+
+        // Initialize edge subdivision points
+        edges.forEach(e => {
+            const src = nodePositions[e.source];
+            const tgt = nodePositions[e.target];
+            e.points = initEdgePoints(src, tgt);
+        });
+
+        // Pre-compute compatibility between all edge pairs
+        const compat = [];
+        for (let i = 0; i < edges.length; i++) {
+            compat[i] = [];
+            for (let j = 0; j < edges.length; j++) {
+                if (i === j) { compat[i][j] = 0; continue; }
+                if (j < i) { compat[i][j] = compat[j][i]; continue; }
+                const c = edgeCompatibility(edges[i].points, edges[j].points);
+                compat[i][j] = c;
+            }
+        }
+
+        // Simulation parameters (Holten & Wijk 2009)
+        const K = 0.1;                  // spring constant
+        let S = 0.1;                    // step size (paper default)
+        const S_decay = 0.5;
+        let I = 60;                     // iterations per cycle
+        const I_decay = 2 / 3;
+        const compatThreshold = 0.6;
+        const numCycles = 6;
+
+        for (let cycle = 0; cycle < numCycles; cycle++) {
+            // Subdivide edges (except first cycle — already have 3 points)
+            if (cycle > 0) {
+                edges.forEach(e => { e.points = subdivideEdge(e.points); });
+            }
+
+            const numIter = Math.round(I);
+
+            for (let iter = 0; iter < numIter; iter++) {
+                // For each edge, compute forces on interior points
+                edges.forEach((e, ei) => {
+                    const pts = e.points;
+                    const numPts = pts.length;
+                    if (numPts <= 2) return;
+
+                    // Compute forces for interior points (skip endpoints)
+                    const forces = new Array(numPts);
+                    for (let p = 0; p < numPts; p++) forces[p] = { x: 0, y: 0 };
+
+                    for (let p = 1; p < numPts - 1; p++) {
+                        // Spring force: pulls toward neighbors
+                        const kp = K / (vecLen(vecSub(pts[numPts-1], pts[0])) || 1);
+                        forces[p].x += kp * (pts[p-1].x + pts[p+1].x - 2 * pts[p].x);
+                        forces[p].y += kp * (pts[p-1].y + pts[p+1].y - 2 * pts[p].y);
+
+                        // Electrostatic force: attraction from compatible edges
+                        for (let ej = 0; ej < edges.length; ej++) {
+                            if (ej === ei) continue;
+                            if (compat[ei][ej] < compatThreshold) continue;
+
+                            const qPts = edges[ej].points;
+                            // Map point index to corresponding point on other edge
+                            const qIdx = Math.round((p / (numPts - 1)) * (qPts.length - 1));
+                            const q = qPts[Math.min(qIdx, qPts.length - 1)];
+
+                            const dx = q.x - pts[p].x;
+                            const dy = q.y - pts[p].y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < 1e-4) continue;
+
+                            // Force proportional to compatibility, inversely to distance
+                            const strength = compat[ei][ej] / dist;
+                            forces[p].x += strength * dx;
+                            forces[p].y += strength * dy;
+                        }
+                    }
+
+                    // Apply forces with step size (no normalization — paper Eq. 1)
+                    for (let p = 1; p < numPts - 1; p++) {
+                        pts[p].x += S * forces[p].x;
+                        pts[p].y += S * forces[p].y;
+                    }
+                });
+            }
+
+            // Decay step size and iterations
+            S *= S_decay;
+            I *= I_decay;
+        }
+
+        return edges;
+    }
+
+    // ── Store straight & bundled positions ───────────
+    function storeStraightPositions(edges) {
+        edges.forEach(e => {
+            const src = nodePositions[e.source];
+            const tgt = nodePositions[e.target];
+            const numPts = e.points.length;
+            e.straight = [];
+            for (let i = 0; i < numPts; i++) {
+                const t = i / (numPts - 1);
+                e.straight.push({
+                    x: src.x + t * (tgt.x - src.x),
+                    y: src.y + t * (tgt.y - src.y),
+                });
+            }
+            // Deep copy bundled positions
+            e.bundled = e.points.map(p => ({ x: p.x, y: p.y }));
+        });
+    }
+
+    // ── Interpolate for slider ──────────────────────
+    function interpolateEdges(edges, t) {
+        edges.forEach(e => {
+            for (let i = 0; i < e.points.length; i++) {
+                e.points[i].x = e.straight[i].x + t * (e.bundled[i].x - e.straight[i].x);
+                e.points[i].y = e.straight[i].y + t * (e.bundled[i].y - e.straight[i].y);
+            }
+        });
+    }
+
+    // ── D3 line generator for FDEB edges ────────────
+    const lineGen = d3.line().x(d => d.x).y(d => d.y).curve(d3.curveBasis);
+
+    // ── SVG Setup ───────────────────────────────────
+    document.getElementById('loading').style.display = 'none';
+
+    const svg = d3.select('#chart')
+        .append('svg')
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('width', width)
+        .attr('height', height);
+
+    // ── Group Arcs ──────────────────────────────────
+    const arcGroup = svg.append('g');
+    const arcPaths = [];
+
+    function drawGroupArcs() {
+        arcGroup.selectAll('path').remove();
+        arcPaths.length = 0;
+
+        groups.forEach((g, gi) => {
+            const indices = g.ids.map(id => orderedIds.indexOf(id)).filter(i => i >= 0).sort((a,b) => a-b);
+            if (indices.length < 2) { arcPaths.push(null); return; }
+
+            const pad = 0.025;
+            const startAngle = (2 * Math.PI * indices[0]) / orderedIds.length - Math.PI / 2 - pad;
+            const endAngle = (2 * Math.PI * indices[indices.length-1]) / orderedIds.length - Math.PI / 2 + pad;
+
+            const arcGen = d3.arc()
+                .innerRadius(radius - 5)
+                .outerRadius(radius - 1)
+                .startAngle(startAngle + Math.PI / 2)
+                .endAngle(endAngle + Math.PI / 2);
+
+            const path = arcGroup.append('path')
+                .attr('d', arcGen())
+                .attr('transform', `translate(${cx},${cy})`)
+                .attr('fill', groupColors[gi])
+                .attr('opacity', 0.35);
+            arcPaths.push(path);
+        });
+    }
+    drawGroupArcs();
+
+    // ── Link Group ──────────────────────────────────
+    const linkGroup = svg.append('g');
+
+    // ── Node Group ──────────────────────────────────
+    const nodeGroup = svg.append('g');
+    const nodeGs = nodeGroup.selectAll('g')
+        .data(orderedIds.map(id => ({ id, pos: nodePositions[id] })))
+        .join('g')
+        .attr('class', 'node-group')
+        .attr('transform', d => `translate(${d.pos.x},${d.pos.y})`);
+
+    nodeGs.append('circle')
+        .attr('class', 'node-dot')
+        .attr('r', 4)
+        .attr('fill', d => groupColors[famGroup[d.id] ?? 0]);
+
+    const labelOffset = 12;
+    nodeGs.append('text')
+        .attr('class', 'node-label')
+        .attr('dy', '0.35em')
+        .attr('x', d => {
+            const a = d.pos.angle;
+            return (a > Math.PI / 2 || a < -Math.PI / 2) ? -labelOffset : labelOffset;
+        })
+        .attr('text-anchor', d => {
+            const a = d.pos.angle;
+            return (a > Math.PI / 2 || a < -Math.PI / 2) ? 'end' : 'start';
+        })
+        .attr('transform', d => {
+            const deg = d.pos.angle * 180 / Math.PI;
+            const flip = (d.pos.angle > Math.PI / 2 || d.pos.angle < -Math.PI / 2);
+            return `rotate(${flip ? deg + 180 : deg})`;
+        })
+        .attr('fill', d => groupColors[famGroup[d.id] ?? 0])
+        .text(d => families[d.id].name_ar);
+
+    // ── State ───────────────────────────────────────
+    let currentSurah = null;
+    let currentEdges = [];
+    let currentMatrix = null;
+    let currentActiveFams = null;
+    let currentFvMap = null;
+    let currentT = 0.85; // bundling interpolation
+    let opacityScale = d3.scaleLinear();
+    let strokeScale = d3.scaleLinear();
+
+    // ── Edge Color (blend source + target group colors) ──
+    function edgeColor(e) {
+        const cSrc = groupColors[famGroup[e.source] ?? 0];
+        const cTgt = groupColors[famGroup[e.target] ?? 0];
+        if (cSrc === cTgt) return cSrc;
+        // Blend the two colors
+        const s = d3.color(cSrc), t = d3.color(cTgt);
+        return d3.rgb(
+            (s.r + t.r) / 2,
+            (s.g + t.g) / 2,
+            (s.b + t.b) / 2,
+        ).formatHex();
+    }
+
+    // ── Render ──────────────────────────────────────
+    function render(surahNum) {
+        currentSurah = surahNum;
+        const { matrix, activeFams } = buildCooccurrence(surahNum);
+        currentMatrix = matrix;
+        currentActiveFams = activeFams;
+        currentFvMap = buildFamVerseMap(surahNum);
+
+        // Build edge list
+        const edges = [];
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                if (matrix[i][j] > 0) {
+                    edges.push({
+                        source: familyIds[i],
+                        target: familyIds[j],
+                        value: matrix[i][j],
+                    });
+                }
+            }
+        }
+
+        // Run FDEB simulation
+        runFDEB(edges);
+        storeStraightPositions(edges);
+        interpolateEdges(edges, currentT);
+        currentEdges = edges;
+
+        const maxVal = d3.max(edges, d => d.value) || 1;
+        strokeScale = d3.scaleLinear().domain([1, maxVal]).range([0.5, 3]);
+        opacityScale = d3.scaleLinear().domain([1, maxVal]).range([0.06, 0.3]);
+
+        // Draw edges
+        linkGroup.selectAll('path').remove();
+        linkGroup.selectAll('path')
+            .data(edges)
+            .join('path')
+            .attr('class', 'link')
+            .attr('d', d => lineGen(d.points))
+            .attr('stroke', d => edgeColor(d))
+            .attr('stroke-width', d => strokeScale(d.value))
+            .attr('stroke-opacity', d => opacityScale(d.value));
+
+        // Update node visibility
+        nodeGs.attr('opacity', d => activeFams.has(d.id) ? 1 : 0.1);
+
+        // Update group arcs
+        arcPaths.forEach((path, gi) => {
+            if (!path) return;
+            const hasActive = groups[gi].ids.some(id => activeFams.has(id));
+            path.attr('opacity', hasActive ? 0.35 : 0.05);
+        });
+
+        // Stats
+        const statsEl = document.getElementById('stats');
+        if (surahNum) {
+            const info = surahList[surahNum - 1];
+            statsEl.textContent = `${activeFams.size} themes · ${edges.length} connections in ${info.name_en}`;
+        } else {
+            statsEl.textContent = `${activeFams.size} themes · ${edges.length} connections`;
+        }
+
+        // Back link
+        document.getElementById('back-link').href =
+            surahNum ? `index.html#${surahNum}` : 'index.html';
+    }
+
+    // ── Populate Controls ───────────────────────────
+    const filter = document.getElementById('surah-filter');
+    surahList.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.number;
+        opt.textContent = `${s.number}. ${s.name_ar} — ${s.name_en}`;
+        filter.appendChild(opt);
+    });
+
+    // Read URL param
+    const initSurah = new URLSearchParams(window.location.search).get('surah');
+    if (initSurah && +initSurah >= 1 && +initSurah <= 114) {
+        filter.value = initSurah;
+        render(+initSurah);
+    } else {
+        render(null);
+    }
+
+    filter.addEventListener('change', () => {
+        const val = filter.value;
+        render(val === 'all' ? null : +val);
+        closeDetail();
+    });
+
+    // Bundling slider — interpolates between straight (0) and bundled (1)
+    document.getElementById('bundling').addEventListener('input', (e) => {
+        currentT = +e.target.value / 100;
+        interpolateEdges(currentEdges, currentT);
+        linkGroup.selectAll('path').attr('d', d => lineGen(d.points));
+    });
+
+    // ── Tooltip ─────────────────────────────────────
+    const tooltip = document.getElementById('tooltip');
+    function showTip(event, html) {
+        tooltip.innerHTML = html;
+        tooltip.classList.add('visible');
+        positionTip(event);
+    }
+    function positionTip(event) {
+        tooltip.style.left = Math.min(event.clientX + 12, window.innerWidth - 320) + 'px';
+        tooltip.style.top = Math.min(event.clientY + 12, window.innerHeight - 150) + 'px';
+    }
+    function hideTip() { tooltip.classList.remove('visible'); }
+
+    // ── Node Interactivity ──────────────────────────
+    function restoreLinks() {
+        linkGroup.selectAll('path')
+            .classed('link-active', false)
+            .classed('link-dimmed', false)
+            .attr('stroke-opacity', d => opacityScale(d.value));
+    }
+    function restoreNodes() {
+        nodeGs.attr('opacity', d =>
+            (!currentActiveFams || currentActiveFams.has(d.id)) ? 1 : 0.1
+        );
+    }
+
+    nodeGs
+        .on('mouseover', function(event, d) {
+            const id = d.id;
+            const fam = families[id];
+
+            // Highlight connected
+            const connected = new Set([id]);
+            currentEdges.forEach(l => {
+                if (l.source === id) connected.add(l.target);
+                if (l.target === id) connected.add(l.source);
+            });
+
+            linkGroup.selectAll('path').each(function(l) {
+                const isConn = l.source === id || l.target === id;
+                d3.select(this)
+                    .classed('link-active', isConn)
+                    .classed('link-dimmed', !isConn);
+                if (isConn) d3.select(this).raise();
+            });
+
+            nodeGs.attr('opacity', nd => connected.has(nd.id) ? 1 : 0.08);
+
+            const vc = currentFvMap ? currentFvMap[id].size : 0;
+            showTip(event, `
+                <div class="tip-title">${fam.name_ar}</div>
+                <div class="tip-meaning">${fam.meaning}</div>
+                <div class="tip-stat">${fam.roots.length} roots · ${vc} verses</div>
+                <div class="tip-roots">${fam.roots.join(' · ')}</div>
+            `);
+        })
+        .on('mousemove', positionTip)
+        .on('mouseout', function() { restoreLinks(); restoreNodes(); hideTip(); })
+        .on('click', function(event, d) {
+            event.stopPropagation();
+            showFamilyDetail(d.id);
+        });
+
+    // ── Legend ───────────────────────────────────────
+    const legend = document.getElementById('legend');
+    groups.forEach((g, gi) => {
+        const chip = document.createElement('span');
+        chip.className = 'legend-chip';
+        chip.innerHTML = `<span class="dot" style="background:${groupColors[gi]}"></span>${g.name}`;
+        chip.title = g.label;
+
+        chip.addEventListener('mouseenter', () => {
+            const gIds = new Set(g.ids);
+            linkGroup.selectAll('path').each(function(l) {
+                const has = gIds.has(l.source) || gIds.has(l.target);
+                d3.select(this)
+                    .classed('link-active', has)
+                    .classed('link-dimmed', !has);
+                if (has) d3.select(this).raise();
+            });
+            nodeGs.attr('opacity', d => gIds.has(d.id) ? 1 : 0.08);
+        });
+        chip.addEventListener('mouseleave', () => { restoreLinks(); restoreNodes(); });
+        legend.appendChild(chip);
+    });
+
+    // ── Detail Panel ────────────────────────────────
+    const detailPanel = document.getElementById('detail-panel');
+    const detailBody = document.getElementById('detail-body');
+    const detailTitle = document.getElementById('detail-title');
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+
+    function closeDetail() { detailPanel.classList.remove('open'); }
+
     function renderVerseList(verses, limit) {
         const shown = verses.slice(0, limit);
-        const verseHTML = vk => `
+        let html = shown.map(vk => `
             <a class="detail-verse" href="index.html#${vk}" target="_blank">
                 <div class="detail-verse-key">${vk}</div>
                 <div class="detail-verse-text">${versesText[vk] || ''}</div>
-            </a>`;
-        let html = shown.map(verseHTML).join('');
+            </a>
+        `).join('');
         if (verses.length > limit) {
-            const storeKey = `__verses_${++_verseListId}`;
-            window[storeKey] = verses.map(verseHTML).join('');
-            html += `<button class="detail-show-more" onclick="this.parentNode.innerHTML=window['${storeKey}']">
-                عرض الكل (${verses.length})
-            </button>`;
+            html += `<div style="text-align:center;padding:8px;font-family:var(--font-en);font-size:0.8rem;color:var(--text-muted)">
+                +${verses.length - limit} more verses</div>`;
         }
         return html;
     }
 
-    function showChordDetail(si, ti) {
-        detailHistory = []; // reset history for new top-level view
-        const idA = familyIds[si], idB = familyIds[ti];
-        const fA = families[idA], fB = families[idB];
-        const shared = getSharedVerses(idA, idB);
-        const cA = colorScale(idA), cB = colorScale(idB);
-
-        detailTitle.textContent = 'اتصال موضوعي';
-        detailBody.innerHTML = `
-            <div class="detail-families">
-                <span class="detail-fam-badge" style="background:${cA}">${fA.name_ar}</span>
-                <span class="detail-arrow">↔</span>
-                <span class="detail-fam-badge" style="background:${cB}">${fB.name_ar}</span>
-            </div>
-            <div class="detail-meaning">${fA.meaning} ↔ ${fB.meaning}</div>
-            <div class="detail-count">${shared.length} shared verses</div>
-            <div class="detail-section-title">Roots — ${fA.name_ar}</div>
-            <div class="detail-roots">${fA.roots.map(r =>
-                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
-            <div class="detail-section-title">Roots — ${fB.name_ar}</div>
-            <div class="detail-roots">${fB.roots.map(r =>
-                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
-            <div class="detail-section-title">Shared Verses (${shared.length})</div>
-            <div id="detail-verses">${renderVerseList(shared, 20)}</div>
-        `;
-        attachRootChipListeners();
-        // Highlight the relevant ribbons
-        ribbons.attr('fill-opacity', r =>
-            (r.source.index === si && r.target.index === ti) ||
-            (r.source.index === ti && r.target.index === si) ? 0.9 : 0.06
-        );
-        detailPanel.scrollTop = 0;
-        detailPanel.classList.add('open');
-    }
-
-    function showFamilyDetail(idx) {
-        detailHistory = []; // reset history for new top-level view
-        const id = familyIds[idx];
+    function showFamilyDetail(id) {
         const fam = families[id];
-        const c = colorScale(id);
-        // Get top connections sorted by shared count
+        const color = groupColors[famGroup[id] ?? 0];
+        const idx = famIdx[id];
+
+        // Get connections sorted by co-occurrence count
         const connections = [];
         for (let j = 0; j < n; j++) {
-            if (j !== idx && matrix[idx][j] > 0) {
-                connections.push({ idx: j, count: matrix[idx][j] });
+            if (j !== idx && currentMatrix[idx][j] > 0) {
+                connections.push({ id: familyIds[j], count: currentMatrix[idx][j] });
             }
         }
         connections.sort((a, b) => b.count - a.count);
 
+        const vc = currentFvMap[id].size;
+
         detailTitle.textContent = fam.name_ar;
         detailBody.innerHTML = `
-            <div class="detail-families">
-                <span class="detail-fam-badge" style="background:${c}">${fam.name_ar}</span>
+            <div style="text-align:center;margin-bottom:12px">
+                <span class="detail-fam-badge" style="background:${color}">${fam.name_ar}</span>
             </div>
             <div class="detail-meaning">${fam.meaning}</div>
-            <div class="detail-count">${fam.roots.length} roots · ${famVerseCounts[idx]} verses</div>
+            <div class="detail-count">${fam.roots.length} roots · ${vc} verses${currentSurah ? ' in this surah' : ''}</div>
             <div class="detail-section-title">Roots</div>
             <div class="detail-roots">${fam.roots.map(r =>
-                `<span class="detail-root-chip">${r}</span>`).join('')}</div>
-            <div class="detail-section-title">Top Connections</div>
-            ${connections.slice(0, 10).map(c => {
-                const cf = families[familyIds[c.idx]];
-                return `<div class="detail-verse" style="cursor:pointer" data-a="${idx}" data-b="${c.idx}">
-                    <div class="detail-verse-key">${c.count} shared verses</div>
-                    <div class="detail-verse-text" style="font-size:0.9rem">${cf.name_ar} — ${cf.meaning}</div>
-                </div>`;
-            }).join('')}
+                `<span class="detail-root-chip" data-root="${r}">${r}</span>`).join('')}</div>
+            ${connections.length ? `
+                <div class="detail-section-title">Connected Themes (${connections.length})</div>
+                ${connections.slice(0, 12).map(c => {
+                    const cf = families[c.id];
+                    const cc = groupColors[famGroup[c.id] ?? 0];
+                    return `<div class="detail-connection" data-fam="${c.id}">
+                        <span class="detail-connection-count">${c.count} shared</span>
+                        <span class="detail-connection-name" style="color:${cc}">${cf.name_ar}</span>
+                        <span style="font-family:var(--font-en);font-size:0.7rem;color:var(--text-muted);direction:ltr">
+                            — ${cf.meaning}</span>
+                    </div>`;
+                }).join('')}
+            ` : ''}
         `;
-        attachRootChipListeners();
-        attachConnectionListeners();
-        // Highlight
-        ribbons.attr('fill-opacity', r =>
-            (r.source.index === idx || r.target.index === idx) ? 0.85 : 0.06
-        );
-        groups.selectAll('path').attr('opacity', d => d.index === idx ? 1 : 0.3);
+
+        attachDetailListeners(id);
         detailPanel.scrollTop = 0;
         detailPanel.classList.add('open');
     }
 
-    // ── Root Detail View ──
-    let detailHistory = []; // stack for back navigation
+    function showConnectionDetail(famA, famB) {
+        const fA = families[famA], fB = families[famB];
+        const cA = groupColors[famGroup[famA] ?? 0], cB = groupColors[famGroup[famB] ?? 0];
+        const shared = getSharedVerses(famA, famB, currentFvMap);
 
-    function showRootDetail(rootStr) {
-        const data = rootsIndex[rootStr];
-        if (!data) return;
-        // Save current panel content + title for back navigation
-        detailHistory.push({ html: detailBody.innerHTML, title: detailTitle.textContent });
-
-        const famIds = data.fam || [];
-        const famBadges = famIds.map(fid => {
-            const f = families[fid];
-            return f ? `<span class="detail-fam-badge" style="background:${colorScale(fid)};font-size:0.8rem;padding:4px 10px">${f.name_ar}</span>` : '';
-        }).join(' ');
-
-        detailTitle.textContent = rootStr;
+        detailTitle.textContent = 'اتصال موضوعي';
         detailBody.innerHTML = `
-            <div class="root-back-row">
-                <button class="detail-show-more root-back-btn" id="root-back">→ رجوع</button>
+            <div style="text-align:center;margin-bottom:8px">
+                <span class="detail-fam-badge" style="background:${cA}">${fA.name_ar}</span>
+                <span style="font-size:1.2rem;color:var(--text-muted);margin:0 6px">↔</span>
+                <span class="detail-fam-badge" style="background:${cB}">${fB.name_ar}</span>
             </div>
-            <div class="root-letters">${rootStr.split('').join(' ')}</div>
-            <div class="root-buckwalter">${data.b}</div>
-            <div class="root-meaning-box">${data.m || 'No meaning available'}</div>
-            <div class="detail-count">${data.f} verses across the Quran</div>
-            ${famBadges ? `<div class="root-families">${famBadges}</div>` : ''}
-            <div class="detail-section-title">Connected Verses (${data.v.length})</div>
-            <div id="detail-verses">${renderVerseList(data.v, 30)}</div>
+            <div class="detail-meaning">${fA.meaning} ↔ ${fB.meaning}</div>
+            <div class="detail-count">${shared.length} shared verses${currentSurah ? ' in this surah' : ''}</div>
+            <div class="detail-section-title">Roots — ${fA.name_ar}</div>
+            <div class="detail-roots">${fA.roots.map(r =>
+                `<span class="detail-root-chip" data-root="${r}">${r}</span>`).join('')}</div>
+            <div class="detail-section-title">Roots — ${fB.name_ar}</div>
+            <div class="detail-roots">${fB.roots.map(r =>
+                `<span class="detail-root-chip" data-root="${r}">${r}</span>`).join('')}</div>
+            <div class="detail-section-title">Shared Verses (${shared.length})</div>
+            <div>${renderVerseList(shared, 25)}</div>
         `;
-        document.getElementById('root-back').addEventListener('click', () => {
-            if (detailHistory.length > 0) {
-                const prev = detailHistory.pop();
-                detailBody.innerHTML = prev.html;
-                detailTitle.textContent = prev.title;
-                attachRootChipListeners();
-                attachConnectionListeners();
-                detailPanel.scrollTop = 0;
-            }
-        });
+
+        attachDetailListeners();
         detailPanel.scrollTop = 0;
         detailPanel.classList.add('open');
     }
 
-    function attachRootChipListeners() {
+    function attachDetailListeners(currentFamId) {
         detailBody.querySelectorAll('.detail-root-chip').forEach(chip => {
-            chip.addEventListener('click', () => showRootDetail(chip.textContent.trim()));
+            chip.addEventListener('click', () => {
+                const root = chip.dataset.root;
+                const data = rootsIndex[root];
+                if (data && data.v.length) {
+                    const target = currentSurah
+                        ? data.v.find(vk => vk.startsWith(`${currentSurah}:`)) || data.v[0]
+                        : data.v[0];
+                    window.open(`index.html#${target}`, '_blank');
+                }
+            });
         });
-    }
 
-    function attachConnectionListeners() {
-        detailBody.querySelectorAll('[data-a]').forEach(el => {
+        detailBody.querySelectorAll('.detail-connection').forEach(el => {
             el.addEventListener('click', () => {
-                showChordDetail(+el.dataset.a, +el.dataset.b);
+                showConnectionDetail(currentFamId, el.dataset.fam);
             });
         });
     }
 
-    // Attach click handlers to arcs
-    groups.selectAll('path').on('click', function(event, d) {
-        event.stopPropagation();
-        showFamilyDetail(d.index);
-    });
-
-    // Attach click handlers to ribbons
-    ribbons.on('click', function(event, d) {
-        event.stopPropagation();
-        showChordDetail(d.source.index, d.target.index);
-    });
-
-    // Click outside to close — use mousedown so it fires before innerHTML changes
+    // Close panel on outside click / Escape
     document.addEventListener('mousedown', (e) => {
-        if (!detailPanel.contains(e.target) && detailPanel.classList.contains('open')) {
-            closeDetail();
-        }
+        if (!detailPanel.contains(e.target) && detailPanel.classList.contains('open')) closeDetail();
     });
-
-    // Escape key closes panel
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && detailPanel.classList.contains('open')) closeDetail();
+        if (e.key === 'Escape') closeDetail();
     });
-
 })();
 </script>
 </body>

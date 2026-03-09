@@ -6,6 +6,8 @@ const App = {
     rootsIndex: {},
     families: {},
     versesText: {},
+    mufradat: {},
+    furuq: [],
     currentSurah: 1,
     surahCache: {},
     selectedRoot: null,
@@ -32,17 +34,21 @@ const App = {
     // ── Init ───────────────────────────────────────
     async init() {
         try {
-            const [surahList, rootsIndex, families, versesText] = await Promise.all([
+            const [surahList, rootsIndex, families, versesText, mufradat, furuq] = await Promise.all([
                 fetch('data/surah_list.json').then(r => r.json()),
                 fetch('data/roots_index.json').then(r => r.json()),
                 fetch('data/families.json').then(r => r.json()),
                 fetch('data/verses_text.json').then(r => r.json()),
+                fetch('data/mufradat.json').then(r => r.json()),
+                fetch('data/furuq.json').then(r => r.json()),
             ]);
 
             this.surahList = surahList;
             this.rootsIndex = rootsIndex;
             this.families = families;
             this.versesText = versesText;
+            this.mufradat = mufradat;
+            this.furuq = furuq;
 
             this.setupUI();
             this.handleHash();
@@ -140,6 +146,10 @@ const App = {
         const info = this.surahList[num - 1];
         this.$('surah-info').textContent =
             `${info.verses_count} verses · ${info.revelation_place === 'makkah' ? 'Makki' : 'Madani'}`;
+
+        // Update themes link with current surah
+        const themesLink = document.querySelector('.themes-link');
+        if (themesLink) themesLink.href = `themes.html?surah=${num}`;
 
         window.scrollTo(0, 0);
     },
@@ -256,6 +266,12 @@ const App = {
         this.$('root-meaning').style.display = data.m ? 'block' : 'none';
         this.$('root-frequency').textContent = `Appears in ${data.f} verses across the Quran`;
 
+        // Mufradat (classical lexicon)
+        this.renderMufradat(root);
+
+        // Furuq (linguistic distinctions)
+        this.renderFuruq(root);
+
         // Family info
         this.renderFamilyInfo(root, data.fam || []);
 
@@ -265,6 +281,116 @@ const App = {
         // Show panel
         panel.classList.add('panel-visible');
         document.body.classList.add('panel-open');
+    },
+
+    renderMufradat(root) {
+        const section = this.$('mufradat-section');
+        const entry = this.mufradat[root];
+
+        if (!entry) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+
+        // Original root heading from al-Raghib
+        this.$('mufradat-root').textContent = entry.r !== root
+            ? `${entry.r} (${root})`
+            : entry.r;
+
+        // Definition text
+        this.$('mufradat-text').textContent = entry.t;
+
+        // Verse references
+        const versesEl = this.$('mufradat-verses');
+        versesEl.innerHTML = '';
+
+        if (entry.v && entry.v.length) {
+            const label = document.createElement('span');
+            label.className = 'mufradat-verses-label';
+            label.textContent = `الآيات المذكورة (${entry.vc})`;
+            versesEl.appendChild(label);
+
+            const chips = document.createElement('div');
+            chips.className = 'mufradat-verse-chips';
+            entry.v.forEach(vk => {
+                const chip = document.createElement('a');
+                chip.className = 'mufradat-verse-chip';
+                chip.href = `#${vk}`;
+                chip.textContent = vk;
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.navigateToVerse(vk);
+                });
+                chips.appendChild(chip);
+            });
+            if (entry.vc > entry.v.length) {
+                const more = document.createElement('span');
+                more.className = 'mufradat-verse-more';
+                more.textContent = `+${entry.vc - entry.v.length}`;
+                chips.appendChild(more);
+            }
+            versesEl.appendChild(chips);
+        }
+    },
+
+    renderFuruq(root) {
+        const section = this.$('furuq-section');
+        const list = this.$('furuq-list');
+        list.innerHTML = '';
+
+        // Search for pairs where either word contains or matches the root letters
+        const rootLetters = root.split('');
+        const matches = this.furuq.filter(pair => {
+            return this.rootInWord(rootLetters, pair.a) || this.rootInWord(rootLetters, pair.b);
+        });
+
+        if (!matches.length) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+
+        matches.slice(0, 5).forEach(pair => {
+            const card = document.createElement('div');
+            card.className = 'furuq-card';
+
+            const header = document.createElement('div');
+            header.className = 'furuq-pair';
+            header.textContent = `${pair.a} — ${pair.b}`;
+
+            const text = document.createElement('div');
+            text.className = 'furuq-text';
+            text.textContent = pair.t.length > 200
+                ? pair.t.slice(0, 200) + '…'
+                : pair.t;
+
+            card.appendChild(header);
+            card.appendChild(text);
+            list.appendChild(card);
+        });
+
+        if (matches.length > 5) {
+            const more = document.createElement('div');
+            more.className = 'furuq-more';
+            more.textContent = `+${matches.length - 5} more distinctions`;
+            list.appendChild(more);
+        }
+    },
+
+    rootInWord(rootLetters, word) {
+        if (!word) return false;
+        // Check if root letters appear in order within the word
+        let idx = 0;
+        for (const ch of word) {
+            if (ch === rootLetters[idx]) {
+                idx++;
+                if (idx === rootLetters.length) return true;
+            }
+        }
+        return false;
     },
 
     closePanel() {
