@@ -14,6 +14,34 @@ const App = {
     showAllVerses: false,
     PREVIEW_LIMIT: 25,
 
+    // Dark mode
+    darkMode: false,
+
+    // Thematic layer
+    verseFamilies: {},          // { "1:1": Set(["earth_sky"]), ... }
+    THEME_GROUPS: {
+        creation: 0, knowledge: 0, guidance: 0, revelation: 0,
+        prophets_messengers: 0, covenant_promise: 0,
+        truth_falsehood: 1, justice: 1, patience_gratitude: 1,
+        pride_humility: 1, repentance_return: 1, purity: 1,
+        life_death: 2, paradise: 2, hellfire: 2,
+        punishment: 2, mercy: 2, fear_hope: 2,
+        earth_sky: 3, water: 3, plants_agriculture: 3,
+        animals: 3, light_darkness: 3, time: 3,
+        worship: 4, speech_communication: 4, heart_soul: 4,
+        family_kinship: 4, body: 4, movement_journey: 4,
+        fighting: 5, wealth: 5, deception_hypocrisy: 5,
+        provision: 5, seeing_hearing: 5,
+    },
+    GROUP_NAMES: ['الإلهيات', 'الأخلاق', 'الآخرة', 'الطبيعة', 'الإنسان', 'المجتمع'],
+    GROUP_NAMES_EN: ['Theology', 'Ethics', 'Eschatology', 'Nature', 'Human', 'Society'],
+
+    // Translation
+    translationData: null,
+    wbwData: null,
+    translationLoaded: false,
+    showTranslation: false,
+
     // Tafsir
     TAFSIR_API: 'https://api.quran.com/api/v4',
     tafsirCache: {},          // { "tafsirId:verseKey": html }
@@ -50,10 +78,19 @@ const App = {
             this.mufradat = mufradat;
             this.furuq = furuq;
 
+            this.buildVerseFamilies();
             this.setupUI();
             this.handleHash();
 
             this.$('loading-overlay').classList.add('hidden');
+
+            // Always load translation data (WBW tooltips are always visible)
+            // Verse-level translation only shows when toggled on
+            if (localStorage.getItem('qbq-show-translation') === 'true') {
+                this.showTranslation = true;
+                this.$('translation-toggle').classList.add('active');
+            }
+            this.loadTranslation().then(() => this.renderSurah());
         } catch (err) {
             console.error('Init failed:', err);
             document.querySelector('.loader-text').textContent = 'خطأ في التحميل';
@@ -106,8 +143,35 @@ const App = {
             }
         });
 
+        // Dark mode toggle
+        this.darkMode = localStorage.getItem('qbq-dark-mode') === 'true';
+        this.updateThemeIcon();
+        this.$('theme-toggle').addEventListener('click', () => {
+            this.darkMode = !this.darkMode;
+            document.documentElement.classList.toggle('dark-mode', this.darkMode);
+            localStorage.setItem('qbq-dark-mode', this.darkMode);
+            this.updateThemeIcon();
+        });
+
+        // Translation toggle
+        this.$('translation-toggle').addEventListener('click', async () => {
+            if (!this.translationLoaded) {
+                this.$('translation-toggle').textContent = '···';
+                await this.loadTranslation();
+            }
+            this.showTranslation = !this.showTranslation;
+            this.$('translation-toggle').textContent = 'En';
+            this.$('translation-toggle').classList.toggle('active', this.showTranslation);
+            localStorage.setItem('qbq-show-translation', this.showTranslation);
+            this.renderSurah();
+        });
+
         // Hash navigation
         window.addEventListener('hashchange', () => this.handleHash());
+    },
+
+    updateThemeIcon() {
+        this.$('theme-toggle').textContent = this.darkMode ? '☀' : '☽';
     },
 
     handleHash() {
@@ -188,6 +252,15 @@ const App = {
                     span.addEventListener('click', () => this.onWordClick(w.r, span));
                 }
 
+                // Word-by-word tooltip (always shown when data is loaded)
+                if (this.wbwData) {
+                    const wbwVerse = this.wbwData[verse.k];
+                    if (wbwVerse && wbwVerse[i]) {
+                        span.dataset.wbw = wbwVerse[i];
+                        span.classList.add('word-has-wbw');
+                    }
+                }
+
                 textEl.appendChild(span);
 
                 // Space between words
@@ -209,8 +282,44 @@ const App = {
             textEl.appendChild(numEl);
 
             el.appendChild(textEl);
+
+            // Thematic indicators (colored dots per macro-group)
+            const fams = this.verseFamilies[verse.k];
+            if (fams && fams.size > 0) {
+                const themeRow = document.createElement('div');
+                themeRow.className = 'verse-themes';
+                const groupsSeen = new Set();
+                for (const fid of fams) {
+                    const gIdx = this.THEME_GROUPS[fid];
+                    if (gIdx !== undefined && !groupsSeen.has(gIdx)) {
+                        groupsSeen.add(gIdx);
+                        const dot = document.createElement('span');
+                        dot.className = 'theme-dot';
+                        dot.dataset.group = gIdx;
+                        dot.title = `${this.GROUP_NAMES[gIdx]} — ${this.GROUP_NAMES_EN[gIdx]}`;
+                        themeRow.appendChild(dot);
+                    }
+                }
+                el.appendChild(themeRow);
+            }
+
+            // Translation row
+            if (this.showTranslation && this.translationData) {
+                const transText = this.translationData[verse.k];
+                if (transText) {
+                    const transEl = document.createElement('div');
+                    transEl.className = 'verse-translation';
+                    transEl.textContent = transText;
+                    el.appendChild(transEl);
+                }
+            }
+
             container.appendChild(el);
         });
+
+        // Surah theme summary bar
+        this.renderSurahThemes();
+        this.renderSurahInsight();
 
         // Re-highlight if root is selected
         if (this.selectedRoot) {
@@ -526,6 +635,147 @@ const App = {
             btn.textContent = `عرض الكل (${verseKeys.length} آية)`;
         } else {
             btn.style.display = 'none';
+        }
+    },
+
+    // ── Verse Families (thematic computation) ──────
+    buildVerseFamilies() {
+        const vf = {};
+        for (const [root, data] of Object.entries(this.rootsIndex)) {
+            if (!data.fam || !data.fam.length) continue;
+            for (const vk of data.v) {
+                if (!vf[vk]) vf[vk] = new Set();
+                for (const f of data.fam) {
+                    if (this.families[f]) vf[vk].add(f);
+                }
+            }
+        }
+        this.verseFamilies = vf;
+
+        // Pre-compute Quran-wide family rates (for distinctiveness scoring)
+        const totalVerses = Object.keys(this.versesText).length || 6236;
+        const globalCounts = {};
+        for (const fams of Object.values(vf)) {
+            for (const f of fams) globalCounts[f] = (globalCounts[f] || 0) + 1;
+        }
+        this.globalFamilyRates = {};
+        for (const [f, c] of Object.entries(globalCounts)) {
+            this.globalFamilyRates[f] = c / totalVerses;
+        }
+    },
+
+    renderSurahThemes() {
+        const bar = this.$('surah-themes');
+        const surahData = this.surahCache[this.currentSurah];
+        if (!surahData) { bar.style.display = 'none'; return; }
+
+        const familyCounts = {};
+        surahData.forEach(verse => {
+            const fams = this.verseFamilies[verse.k];
+            if (!fams) return;
+            for (const f of fams) {
+                familyCounts[f] = (familyCounts[f] || 0) + 1;
+            }
+        });
+
+        const sorted = Object.entries(familyCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8);
+
+        if (!sorted.length) { bar.style.display = 'none'; return; }
+
+        bar.style.display = 'flex';
+        bar.innerHTML = '';
+
+        sorted.forEach(([fid, count]) => {
+            const fam = this.families[fid];
+            const gIdx = this.THEME_GROUPS[fid];
+            const chip = document.createElement('span');
+            chip.className = 'surah-theme-chip';
+            chip.style.borderColor = `var(--group-${gIdx})`;
+            chip.style.color = `var(--group-${gIdx})`;
+            chip.textContent = fam.name_ar;
+            chip.title = `${fam.meaning} (${count} verses)`;
+            bar.appendChild(chip);
+        });
+    },
+
+    // ── Surah Thematic Insight ─────────────────────
+    renderSurahInsight() {
+        const el = this.$('surah-insight');
+        const surahData = this.surahCache[this.currentSurah];
+        if (!surahData || !this.globalFamilyRates) { el.style.display = 'none'; return; }
+
+        const totalV = surahData.length;
+
+        // Count families in this surah
+        const famCounts = {};
+        surahData.forEach(verse => {
+            const fams = this.verseFamilies[verse.k];
+            if (!fams) return;
+            for (const f of fams) famCounts[f] = (famCounts[f] || 0) + 1;
+        });
+
+        if (!Object.keys(famCounts).length) { el.style.display = 'none'; return; }
+
+        // Aggregate by macro-group (count unique verses per group, not family hits)
+        const groupVerses = [new Set(), new Set(), new Set(), new Set(), new Set(), new Set()];
+        surahData.forEach(verse => {
+            const fams = this.verseFamilies[verse.k];
+            if (!fams) return;
+            for (const f of fams) {
+                const g = this.THEME_GROUPS[f];
+                if (g !== undefined) groupVerses[g].add(verse.k);
+            }
+        });
+        const groupTotals = groupVerses.map(s => s.size);
+        const maxGroupIdx = groupTotals.indexOf(Math.max(...groupTotals));
+        const groupPct = Math.round((groupTotals[maxGroupIdx] / totalV) * 100);
+
+        // Find distinctive families: surah rate vs Quran-wide rate
+        const distinctive = [];
+        for (const [f, c] of Object.entries(famCounts)) {
+            const surahRate = c / totalV;
+            const globalRate = this.globalFamilyRates[f] || 0.01;
+            const ratio = surahRate / globalRate;
+            if (ratio > 1.5 && c >= 3) {
+                distinctive.push({ id: f, ratio, count: c });
+            }
+        }
+        distinctive.sort((a, b) => b.ratio - a.ratio);
+
+        // Build insight text
+        const dominantGroup = this.GROUP_NAMES[maxGroupIdx];
+        const dominantGroupEn = this.GROUP_NAMES_EN[maxGroupIdx];
+
+        let html = `<span class="insight-label">السمة الغالبة: ${dominantGroup}</span>`;
+        html += `<span dir="ltr" style="display:block">Primary register: <strong>${dominantGroupEn}</strong> — ${groupPct}% of verses</span>`;
+
+        if (distinctive.length > 0) {
+            const topDist = distinctive.slice(0, 3).map(d => {
+                const fam = this.families[d.id];
+                return `${fam.name_ar} (${d.ratio.toFixed(1)}×)`;
+            });
+            html += `<div class="insight-distinctive">المميّز: ${topDist.join(' · ')}</div>`;
+        }
+
+        el.innerHTML = html;
+        el.style.display = 'block';
+    },
+
+    // ── Translation ─────────────────────────────────
+    async loadTranslation() {
+        if (this.translationLoaded) return;
+        try {
+            const [trans, wbw] = await Promise.all([
+                fetch('data/translations/en.sahih.json').then(r => r.json()),
+                fetch('data/translations/wbw.en.json').then(r => r.json()),
+            ]);
+            this.translationData = trans;
+            this.wbwData = wbw;
+            this.translationLoaded = true;
+        } catch (err) {
+            console.error('Translation load failed:', err);
         }
     },
 

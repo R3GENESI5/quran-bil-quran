@@ -20,5 +20,9 @@ __pycache__/
 .vscode/
 .idea/
 
+# Netlify
+.netlify/
+app/.netlify/
+
 # Claude
 .claude/

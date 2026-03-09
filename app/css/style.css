@@ -21,6 +21,50 @@
     --radius: 8px;
 }
 
+/* ── Group Colors (semantic families) ──────────── */
+:root {
+    --group-0: #b8860b;   /* الإلهيات — Theology */
+    --group-1: #4a7c5e;   /* الأخلاق — Ethics */
+    --group-2: #8b4513;   /* الآخرة — Eschatology */
+    --group-3: #2e7d6e;   /* الطبيعة — Nature */
+    --group-4: #6a5acd;   /* الإنسان — Human */
+    --group-5: #cd5c5c;   /* المجتمع — Society */
+}
+
+/* ── Dark Mode ─────────────────────────────────── */
+.dark-mode {
+    --bg: #1a1612;
+    --bg-alt: #231e18;
+    --surface: #2a2420;
+    --text: #e8dfd5;
+    --text-muted: #a09080;
+    --gold: #d4a020;
+    --gold-light: rgba(212, 160, 32, 0.15);
+    --gold-hover: rgba(212, 160, 32, 0.10);
+    --green: #6aaa80;
+    --green-light: rgba(106, 170, 128, 0.12);
+    --border: #3a3028;
+    --panel-bg: #221c16;
+    --verse-num: #c09060;
+    --highlight: rgba(212, 160, 32, 0.20);
+    --group-0: #d4a020;
+    --group-1: #6aaa80;
+    --group-2: #c07030;
+    --group-3: #45b8a0;
+    --group-4: #8a7ae8;
+    --group-5: #e07070;
+}
+
+.dark-mode #header {
+    background: rgba(42, 36, 32, 0.92);
+}
+
+.dark-mode .verse {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.dark-mode ::-webkit-scrollbar-thumb { background: #4a3e30; }
+
 /* ── Reset ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -109,6 +153,41 @@ body {
     white-space: nowrap;
 }
 .themes-link:hover { background: var(--gold-hover); }
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.theme-toggle-btn,
+.trans-toggle-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.theme-toggle-btn:hover,
+.trans-toggle-btn:hover { background: var(--bg-alt); }
+
+.trans-toggle-btn {
+    font-family: var(--font-en);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.trans-toggle-btn.active {
+    background: var(--gold-light);
+    color: var(--gold);
+    border-color: var(--gold);
+}
 
 /* ── Main Layout ────────────────────────────────── */
 #main {
@@ -667,6 +746,136 @@ body {
     50% { opacity: 1; }
 }
 
+/* ── Thematic Indicators ──────────────────────── */
+.verse-themes {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 6px;
+    opacity: 0.7;
+}
+
+.theme-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: transform 0.15s, opacity 0.15s;
+    cursor: default;
+}
+.theme-dot:hover {
+    transform: scale(1.8);
+    opacity: 1;
+}
+
+.theme-dot[data-group="0"] { background: var(--group-0); }
+.theme-dot[data-group="1"] { background: var(--group-1); }
+.theme-dot[data-group="2"] { background: var(--group-2); }
+.theme-dot[data-group="3"] { background: var(--group-3); }
+.theme-dot[data-group="4"] { background: var(--group-4); }
+.theme-dot[data-group="5"] { background: var(--group-5); }
+
+.surah-theme-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 28px;
+    padding: 0 5%;
+}
+
+.surah-theme-chip {
+    font-size: 0.8rem;
+    padding: 3px 12px;
+    border: 1.5px solid;
+    border-radius: 14px;
+    background: transparent;
+    white-space: nowrap;
+    transition: background 0.15s;
+    cursor: default;
+}
+
+.themes-hidden .verse-themes,
+.themes-hidden .surah-theme-bar { display: none; }
+.themes-hidden .surah-insight { display: none !important; }
+
+/* ── Surah Thematic Insight ─────────────────── */
+.surah-insight {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 24px;
+    padding: 12px 20px;
+    font-family: var(--font-en);
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--gold-light);
+}
+.surah-insight .insight-label {
+    font-family: var(--font-ar);
+    font-size: 0.95rem;
+    color: var(--gold);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+}
+.surah-insight .insight-distinctive {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    opacity: 0.85;
+}
+
+/* ── Translation Row ─────────────────────────── */
+.verse-translation {
+    font-family: var(--font-en);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    text-align: center;
+    direction: ltr;
+    margin-top: 6px;
+    padding: 6px 12px;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+    border-top: 1px dashed var(--border);
+}
+
+/* ── Word-by-Word Tooltip ────────────────────── */
+.word-has-wbw {
+    position: relative;
+}
+
+.word-has-wbw::after {
+    content: attr(data-wbw);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: var(--font-en);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+    direction: ltr;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.word-has-wbw:hover::after,
+.word-has-wbw.wbw-visible::after {
+    opacity: 1;
+}
+
 /* ── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -690,7 +899,9 @@ body {
 
     .verse-text { font-size: 1.35rem; }
 
-    .header-left { display: none; }
+    .header-left { gap: 4px; }
+    .header-left .themes-link,
+    .header-left .surah-meta { display: none; }
 
     .logo { font-size: 1.1rem; }
 
