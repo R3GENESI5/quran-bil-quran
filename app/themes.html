@@ -621,6 +621,7 @@ header {
     }
 
     function showChordDetail(si, ti) {
+        detailHistory = []; // reset history for new top-level view
         const idA = familyIds[si], idB = familyIds[ti];
         const fA = families[idA], fB = families[idB];
         const shared = getSharedVerses(idA, idB);
@@ -644,6 +645,7 @@ header {
             <div class="detail-section-title">Shared Verses (${shared.length})</div>
             <div id="detail-verses">${renderVerseList(shared, 20)}</div>
         `;
+        attachRootChipListeners();
         // Highlight the relevant ribbons
         ribbons.attr('fill-opacity', r =>
             (r.source.index === si && r.target.index === ti) ||
@@ -653,6 +655,7 @@ header {
     }
 
     function showFamilyDetail(idx) {
+        detailHistory = []; // reset history for new top-level view
         const id = familyIds[idx];
         const fam = families[id];
         const c = colorScale(id);
@@ -684,18 +687,73 @@ header {
                 </div>`;
             }).join('')}
         `;
-        // Click on a connection to drill into the chord
-        detailBody.querySelectorAll('[data-a]').forEach(el => {
-            el.addEventListener('click', () => {
-                showChordDetail(+el.dataset.a, +el.dataset.b);
-            });
-        });
+        attachRootChipListeners();
+        attachConnectionListeners();
         // Highlight
         ribbons.attr('fill-opacity', r =>
             (r.source.index === idx || r.target.index === idx) ? 0.85 : 0.06
         );
         groups.selectAll('path').attr('opacity', d => d.index === idx ? 1 : 0.3);
         detailPanel.classList.add('open');
+    }
+
+    // ── Root Detail View ──
+    let detailHistory = []; // stack for back navigation
+
+    function showRootDetail(rootStr) {
+        const data = rootsIndex[rootStr];
+        if (!data) return;
+        // Save current panel content for back navigation
+        detailHistory.push(detailBody.innerHTML);
+
+        const famIds = data.fam || [];
+        const famBadges = famIds.map(fid => {
+            const f = families[fid];
+            return f ? `<span class="detail-fam-badge" style="background:${colorScale(fid)};font-size:0.8rem;padding:4px 10px">${f.name_ar}</span>` : '';
+        }).join(' ');
+
+        detailTitle.textContent = rootStr;
+        detailBody.innerHTML = `
+            <div style="text-align:center;margin-bottom:8px">
+                <button class="detail-show-more" id="root-back" style="width:auto;display:inline-block;margin-bottom:12px">→ رجوع</button>
+            </div>
+            <div style="text-align:center;font-size:2.6rem;font-weight:700;color:var(--gold);letter-spacing:4px;margin-bottom:4px">
+                ${rootStr.split('').join(' ')}
+            </div>
+            <div style="text-align:center;font-family:var(--font-en);font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;direction:ltr">
+                ${data.b}
+            </div>
+            <div style="font-family:var(--font-en);font-size:0.9rem;line-height:1.6;padding:12px;background:var(--panel-bg);border-radius:6px;margin-bottom:12px;direction:ltr;text-align:left">
+                ${data.m || 'No meaning available'}
+            </div>
+            <div class="detail-count">${data.f} verses across the Quran</div>
+            ${famBadges ? `<div style="text-align:center;margin-bottom:16px">${famBadges}</div>` : ''}
+            <div class="detail-section-title">Connected Verses (${data.v.length})</div>
+            <div id="detail-verses">${renderVerseList(data.v, 30)}</div>
+        `;
+        document.getElementById('root-back').addEventListener('click', () => {
+            if (detailHistory.length > 0) {
+                detailBody.innerHTML = detailHistory.pop();
+                detailTitle.textContent = 'التفاصيل';
+                attachRootChipListeners();
+                attachConnectionListeners();
+            }
+        });
+        detailPanel.classList.add('open');
+    }
+
+    function attachRootChipListeners() {
+        detailBody.querySelectorAll('.detail-root-chip').forEach(chip => {
+            chip.addEventListener('click', () => showRootDetail(chip.textContent.trim()));
+        });
+    }
+
+    function attachConnectionListeners() {
+        detailBody.querySelectorAll('[data-a]').forEach(el => {
+            el.addEventListener('click', () => {
+                showChordDetail(+el.dataset.a, +el.dataset.b);
+            });
+        });
     }
 
     // Attach click handlers to arcs
@@ -710,8 +768,8 @@ header {
         showChordDetail(d.source.index, d.target.index);
     });
 
-    // Click outside to close
-    document.addEventListener('click', (e) => {
+    // Click outside to close — use mousedown so it fires before innerHTML changes
+    document.addEventListener('mousedown', (e) => {
         if (!detailPanel.contains(e.target) && detailPanel.classList.contains('open')) {
             closeDetail();
         }
