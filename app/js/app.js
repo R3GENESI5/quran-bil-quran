@@ -12,6 +12,20 @@ const App = {
     showAllVerses: false,
     PREVIEW_LIMIT: 25,
 
+    // Tafsir
+    TAFSIR_API: 'https://api.quran.com/api/v4',
+    tafsirCache: {},          // { "tafsirId:verseKey": html }
+    activeTafsir: 16,         // default: Muyassar (concise)
+    TAFSIRS: {
+        16: 'التفسير الميسّر',
+        14: 'ابن كثير',
+        91: 'السعدي',
+        94: 'البغوي',
+        15: 'الطبري',
+        90: 'القرطبي',
+        93: 'الوسيط — الطنطاوي',
+    },
+
     // DOM refs
     $: (id) => document.getElementById(id),
 
@@ -99,21 +113,21 @@ const App = {
         const parts = hash.split(':');
         const surah = parseInt(parts[0]);
         if (surah >= 1 && surah <= 114) {
-            this.loadSurah(surah).then(() => {
+            this.loadSurah(surah, true).then(() => {
                 if (parts[1]) this.scrollToVerse(`${surah}:${parts[1]}`);
             });
         }
     },
 
     // ── Data Loading ───────────────────────────────
-    async loadSurah(num) {
+    async loadSurah(num, skipHash) {
         if (!this.surahCache[num]) {
             const resp = await fetch(`data/surahs/${num}.json`);
             this.surahCache[num] = await resp.json();
         }
         this.currentSurah = num;
         this.renderSurah();
-        location.hash = `${num}`;
+        if (!skipHash) location.hash = `${num}`;
 
         // Update selector
         this.$('surah-select').value = num;
@@ -172,10 +186,15 @@ const App = {
                 }
             });
 
-            // Inline verse number at end
+            // Inline verse number at end (clickable for tafsir)
             const numEl = document.createElement('span');
             numEl.className = 'verse-num';
             numEl.textContent = verse.a;
+            numEl.title = 'اضغط لعرض التفسير';
+            numEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleTafsir(verse.k, el);
+            });
             textEl.appendChild(document.createTextNode(' '));
             textEl.appendChild(numEl);
 
@@ -382,6 +401,134 @@ const App = {
         } else {
             btn.style.display = 'none';
         }
+    },
+
+    // ── Tafsir ──────────────────────────────────────
+    sanitizeTafsir(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        // Strip all tags except safe ones
+        const allowed = new Set(['P', 'BR', 'B', 'STRONG', 'I', 'EM', 'SPAN', 'DIV']);
+        const walk = (node) => {
+            [...node.childNodes].forEach(child => {
+                if (child.nodeType === 1) { // Element
+                    if (!allowed.has(child.tagName)) {
+                        // Replace with its text content
+                        child.replaceWith(document.createTextNode(child.textContent));
+                    } else {
+                        // Remove all attributes (prevent XSS via onclick, style, etc.)
+                        [...child.attributes].forEach(a => child.removeAttribute(a.name));
+                        walk(child);
+                    }
+                }
+            });
+        };
+        walk(tmp);
+        return tmp.innerHTML;
+    },
+
+    async fetchTafsir(tafsirId, verseKey) {
+        const cacheKey = `${tafsirId}:${verseKey}`;
+        if (this.tafsirCache[cacheKey]) return this.tafsirCache[cacheKey];
+
+        const [surah, ayah] = verseKey.split(':');
+        const url = `${this.TAFSIR_API}/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`API ${resp.status}`);
+        const data = await resp.json();
+
+        const raw = data.tafsir?.text || '';
+        const clean = this.sanitizeTafsir(raw);
+        this.tafsirCache[cacheKey] = clean;
+        return clean;
+    },
+
+    toggleTafsir(verseKey, verseEl) {
+        const existing = verseEl.querySelector('.tafsir-block');
+        const numEl = verseEl.querySelector('.verse-num');
+
+        if (existing) {
+            // Close
+            existing.classList.remove('open');
+            numEl.classList.remove('tafsir-open');
+            setTimeout(() => existing.remove(), 350);
+            return;
+        }
+
+        // Open — create block
+        const block = document.createElement('div');
+        block.className = 'tafsir-block';
+        block.innerHTML = `<div class="tafsir-inner"><div class="tafsir-loading">جارٍ تحميل التفسير...</div></div>`;
+        verseEl.appendChild(block);
+        numEl.classList.add('tafsir-open');
+
+        // Trigger animation
+        requestAnimationFrame(() => block.classList.add('open'));
+
+        this.loadTafsirContent(verseKey, block);
+    },
+
+    async loadTafsirContent(verseKey, block) {
+        try {
+            const html = await this.fetchTafsir(this.activeTafsir, verseKey);
+            this.renderTafsirBlock(verseKey, block, html);
+        } catch (err) {
+            const inner = block.querySelector('.tafsir-inner');
+            inner.innerHTML = `
+                <div class="tafsir-error">
+                    تعذر تحميل التفسير
+                    <br>
+                    <button class="tafsir-retry" data-vk="${verseKey}">إعادة المحاولة</button>
+                </div>`;
+            inner.querySelector('.tafsir-retry').addEventListener('click', () => {
+                inner.innerHTML = `<div class="tafsir-loading">جارٍ تحميل التفسير...</div>`;
+                this.loadTafsirContent(verseKey, block);
+            });
+        }
+    },
+
+    renderTafsirBlock(verseKey, block, html) {
+        const inner = block.querySelector('.tafsir-inner');
+
+        // Build selector options
+        const opts = Object.entries(this.TAFSIRS)
+            .map(([id, name]) => `<option value="${id}"${+id === this.activeTafsir ? ' selected' : ''}>${name}</option>`)
+            .join('');
+
+        inner.innerHTML = `
+            <div class="tafsir-toolbar">
+                <span class="tafsir-label">التفسير</span>
+                <select class="tafsir-select">${opts}</select>
+            </div>
+            <div class="tafsir-text">${html || '<em>لا يتوفر تفسير لهذه الآية</em>'}</div>`;
+
+        // Tafsir switch handler
+        inner.querySelector('.tafsir-select').addEventListener('change', async (e) => {
+            const newId = parseInt(e.target.value);
+            this.activeTafsir = newId;
+            const textEl = inner.querySelector('.tafsir-text');
+            textEl.innerHTML = `<div class="tafsir-loading">جارٍ تحميل التفسير...</div>`;
+            try {
+                const newHtml = await this.fetchTafsir(newId, verseKey);
+                textEl.innerHTML = newHtml || '<em>لا يتوفر تفسير لهذه الآية</em>';
+            } catch {
+                textEl.innerHTML = `
+                    <div class="tafsir-error">
+                        تعذر تحميل التفسير
+                        <br>
+                        <button class="tafsir-retry">إعادة المحاولة</button>
+                    </div>`;
+                textEl.querySelector('.tafsir-retry').addEventListener('click', async () => {
+                    textEl.innerHTML = `<div class="tafsir-loading">جارٍ تحميل التفسير...</div>`;
+                    try {
+                        const retryHtml = await this.fetchTafsir(newId, verseKey);
+                        textEl.innerHTML = retryHtml || '<em>لا يتوفر تفسير لهذه الآية</em>';
+                    } catch {
+                        textEl.innerHTML = `<div class="tafsir-error">تعذر تحميل التفسير</div>`;
+                    }
+                });
+            }
+        });
     },
 
     // ── Navigation ─────────────────────────────────
