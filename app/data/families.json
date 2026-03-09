@@ -1,0 +1,446 @@
+{
+  "creation": {
+    "name_ar": "الخلق والإيجاد",
+    "meaning": "Creating, originating, fashioning, bringing into being",
+    "roots": [
+      "خلق",
+      "برأ",
+      "فطر",
+      "صور",
+      "جعل",
+      "بدع",
+      "نشأ",
+      "صنع",
+      "كون"
+    ]
+  },
+  "knowledge": {
+    "name_ar": "العلم والمعرفة",
+    "meaning": "Knowing, understanding, perceiving, wisdom",
+    "roots": [
+      "علم",
+      "عرف",
+      "فقه",
+      "درك",
+      "شعر",
+      "حكم",
+      "بصر",
+      "خبر"
+    ]
+  },
+  "guidance": {
+    "name_ar": "الهداية والضلال",
+    "meaning": "Guidance, misguidance, paths, ways",
+    "roots": [
+      "هدي",
+      "رشد",
+      "ضلل",
+      "غوي",
+      "صرط",
+      "سبل",
+      "طرق"
+    ]
+  },
+  "provision": {
+    "name_ar": "الرزق والإنفاق",
+    "meaning": "Provision, sustenance, food, drink, spending",
+    "roots": [
+      "رزق",
+      "نفق",
+      "طعم",
+      "أكل",
+      "سقي",
+      "شرب",
+      "قوت",
+      "متع"
+    ]
+  },
+  "punishment": {
+    "name_ar": "العذاب والعقوبة",
+    "meaning": "Punishment, retribution, destruction",
+    "roots": [
+      "عذب",
+      "عقب",
+      "نقم",
+      "أخذ",
+      "هلك",
+      "دمر",
+      "صعق"
+    ]
+  },
+  "mercy": {
+    "name_ar": "الرحمة والمغفرة",
+    "meaning": "Mercy, forgiveness, pardon, forbearance",
+    "roots": [
+      "رحم",
+      "غفر",
+      "عفو",
+      "صفح",
+      "حلم",
+      "رأف"
+    ]
+  },
+  "worship": {
+    "name_ar": "العبادة والتقوى",
+    "meaning": "Worship, prayer, fasting, remembrance, supplication",
+    "roots": [
+      "عبد",
+      "سجد",
+      "ركع",
+      "صلو",
+      "صوم",
+      "حجج",
+      "ذكر",
+      "سبح",
+      "دعو"
+    ]
+  },
+  "revelation": {
+    "name_ar": "الوحي والكتاب",
+    "meaning": "Revelation, scripture, recitation, clarification",
+    "roots": [
+      "وحي",
+      "نزل",
+      "كتب",
+      "قرأ",
+      "تلو",
+      "بين",
+      "فصل"
+    ]
+  },
+  "life_death": {
+    "name_ar": "الحياة والموت",
+    "meaning": "Life, death, resurrection, gathering",
+    "roots": [
+      "حيي",
+      "موت",
+      "بعث",
+      "نشر",
+      "قبر",
+      "حشر",
+      "قوم"
+    ]
+  },
+  "earth_sky": {
+    "name_ar": "الأرض والسماء",
+    "meaning": "Earth, heavens, mountains, seas, celestial bodies",
+    "roots": [
+      "أرض",
+      "سمو",
+      "جبل",
+      "بحر",
+      "نهر",
+      "شمس",
+      "قمر",
+      "نجم",
+      "فلك"
+    ]
+  },
+  "fear_hope": {
+    "name_ar": "الخوف والرجاء",
+    "meaning": "Fear, awe, hope, security",
+    "roots": [
+      "خوف",
+      "خشي",
+      "رهب",
+      "وجل",
+      "رجو",
+      "طمع",
+      "أمن"
+    ]
+  },
+  "speech_communication": {
+    "name_ar": "القول والكلام",
+    "meaning": "Speech, communication, glad tidings, warning",
+    "roots": [
+      "قول",
+      "كلم",
+      "نطق",
+      "حدث",
+      "خطب",
+      "نبأ",
+      "بشر",
+      "نذر"
+    ]
+  },
+  "truth_falsehood": {
+    "name_ar": "الحق والباطل",
+    "meaning": "Truth, falsehood, lying, conjecture",
+    "roots": [
+      "حقق",
+      "صدق",
+      "بطل",
+      "كذب",
+      "زور",
+      "ظنن"
+    ]
+  },
+  "justice": {
+    "name_ar": "العدل والظلم",
+    "meaning": "Justice, equity, oppression, judgement, measure",
+    "roots": [
+      "عدل",
+      "قسط",
+      "ظلم",
+      "بغي",
+      "جور",
+      "حكم",
+      "وزن",
+      "كيل"
+    ]
+  },
+  "light_darkness": {
+    "name_ar": "النور والظلمة",
+    "meaning": "Light, darkness, illumination",
+    "roots": [
+      "نور",
+      "ظلم",
+      "سرج",
+      "شهب"
+    ]
+  },
+  "seeing_hearing": {
+    "name_ar": "البصر والسمع",
+    "meaning": "Seeing, hearing, blindness, deafness",
+    "roots": [
+      "بصر",
+      "نظر",
+      "رأي",
+      "سمع",
+      "أذن",
+      "صمم",
+      "عمي"
+    ]
+  },
+  "water": {
+    "name_ar": "الماء والمطر",
+    "meaning": "Water, rain, springs, rivers",
+    "roots": [
+      "مطر",
+      "غيث",
+      "سقي",
+      "نبع",
+      "عين",
+      "نهر"
+    ]
+  },
+  "fighting": {
+    "name_ar": "القتال والجهاد",
+    "meaning": "Fighting, striving, war, victory, defeat",
+    "roots": [
+      "قتل",
+      "جهد",
+      "حرب",
+      "نصر",
+      "فتح",
+      "هزم"
+    ]
+  },
+  "wealth": {
+    "name_ar": "المال والتجارة",
+    "meaning": "Wealth, trade, profit, loss, buying, selling",
+    "roots": [
+      "مول",
+      "تجر",
+      "خسر",
+      "بيع",
+      "شري",
+      "كنز",
+      "ربو"
+    ]
+  },
+  "patience_gratitude": {
+    "name_ar": "الصبر والشكر",
+    "meaning": "Patience, gratitude, praise, ingratitude",
+    "roots": [
+      "صبر",
+      "شكر",
+      "حمد",
+      "كفر",
+      "جزع"
+    ]
+  },
+  "heart_soul": {
+    "name_ar": "القلب والنفس",
+    "meaning": "Heart, soul, chest, intellect, spirit",
+    "roots": [
+      "قلب",
+      "نفس",
+      "صدر",
+      "لبب",
+      "روح",
+      "عقل"
+    ]
+  },
+  "prophets_messengers": {
+    "name_ar": "الأنبياء والرسل",
+    "meaning": "Prophets, messengers, revelation, mission, chosen",
+    "roots": [
+      "نبأ",
+      "رسل",
+      "وحي",
+      "بعث",
+      "صفو"
+    ]
+  },
+  "covenant_promise": {
+    "name_ar": "العهد والميثاق",
+    "meaning": "Covenant, oath, vow, promise, pledge",
+    "roots": [
+      "عهد",
+      "عقد",
+      "حلف",
+      "نذر",
+      "وعد",
+      "يمن"
+    ]
+  },
+  "time": {
+    "name_ar": "الزمان والأجل",
+    "meaning": "Day, night, time, epoch, term, eternity",
+    "roots": [
+      "يوم",
+      "ليل",
+      "نهر",
+      "دهر",
+      "عصر",
+      "أجل",
+      "أبد",
+      "قرن"
+    ]
+  },
+  "movement_journey": {
+    "name_ar": "الحركة والسفر",
+    "meaning": "Walking, traveling, migration, entering, exiting, returning",
+    "roots": [
+      "مشي",
+      "سير",
+      "سفر",
+      "هجر",
+      "خرج",
+      "دخل",
+      "رجع",
+      "أتي"
+    ]
+  },
+  "paradise": {
+    "name_ar": "الجنة والنعيم",
+    "meaning": "Paradise, bliss, eternity, success, joy",
+    "roots": [
+      "جنن",
+      "نعم",
+      "خلد",
+      "فوز",
+      "فلح",
+      "فرح"
+    ]
+  },
+  "hellfire": {
+    "name_ar": "النار والجحيم",
+    "meaning": "Hellfire, blaze, burning, fuel, crushing fire",
+    "roots": [
+      "سعر",
+      "جحم",
+      "حرق",
+      "وقد",
+      "حمم",
+      "حطم"
+    ]
+  },
+  "family_kinship": {
+    "name_ar": "الأسرة والقرابة",
+    "meaning": "Family, children, parents, kin, spouse",
+    "roots": [
+      "أهل",
+      "ولد",
+      "أبو",
+      "أمم",
+      "أخو",
+      "زوج"
+    ]
+  },
+  "deception_hypocrisy": {
+    "name_ar": "المكر والنفاق",
+    "meaning": "Plotting, scheming, deception, hypocrisy",
+    "roots": [
+      "مكر",
+      "كيد",
+      "خدع",
+      "غرر",
+      "نفق",
+      "منن"
+    ]
+  },
+  "pride_humility": {
+    "name_ar": "الكبر والتواضع",
+    "meaning": "Pride, arrogance, humility, submission",
+    "roots": [
+      "كبر",
+      "عظم",
+      "خشع",
+      "ذلل",
+      "خضع"
+    ]
+  },
+  "repentance_return": {
+    "name_ar": "التوبة والإنابة",
+    "meaning": "Repentance, returning to God, regret",
+    "roots": [
+      "توب",
+      "أوب",
+      "رجع",
+      "ندم"
+    ]
+  },
+  "purity": {
+    "name_ar": "الطهارة والتزكية",
+    "meaning": "Purity, purification, cleansing, spiritual growth",
+    "roots": [
+      "طهر",
+      "زكو",
+      "صفو",
+      "غسل"
+    ]
+  },
+  "plants_agriculture": {
+    "name_ar": "النبات والزراعة",
+    "meaning": "Plants, seeds, trees, fruits, cultivation, gardens",
+    "roots": [
+      "نبت",
+      "زرع",
+      "حبب",
+      "شجر",
+      "ثمر",
+      "حرث",
+      "جنن"
+    ]
+  },
+  "animals": {
+    "name_ar": "الحيوان والدواب",
+    "meaning": "Cattle, sheep, horses, birds, fish, ants, bees",
+    "roots": [
+      "بقر",
+      "غنم",
+      "خيل",
+      "حمر",
+      "طير",
+      "حوت",
+      "نمل",
+      "نحل"
+    ]
+  },
+  "body": {
+    "name_ar": "الجسد والأعضاء",
+    "meaning": "Hands, feet, face, eyes, head, skin, body parts",
+    "roots": [
+      "يدي",
+      "رجل",
+      "وجه",
+      "عين",
+      "رأس",
+      "جلد",
+      "بطن",
+      "ظهر"
+    ]
+  }
+}
