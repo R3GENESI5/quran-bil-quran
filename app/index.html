@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=13">
+    <link rel="stylesheet" href="css/style.css?v=14">
     <script>if(localStorage.getItem('qbq-dark-mode')==='true')document.documentElement.classList.add('dark-mode')</script>
 </head>
 <body>
@@ -59,32 +59,62 @@
                 <div id="root-frequency" class="root-freq"></div>
                 <div id="root-revelation" class="root-revelation"></div>
 
-                <div id="mufradat-section" class="panel-section" style="display:none">
-                    <h4>المفردات — Mufradat al-Quran</h4>
-                    <div id="mufradat-root" class="mufradat-root"></div>
-                    <div id="mufradat-text" class="mufradat-text"></div>
-                    <div id="mufradat-verses" class="mufradat-verses"></div>
+                <div id="mufradat-section" class="panel-section collapsed" style="display:none">
+                    <h4 class="section-toggle">
+                        <span class="chevron">▸</span>
+                        <span class="section-title">المفردات — Mufradat al-Quran</span>
+                        <span class="section-desc">Classical root definitions by al-Raghib al-Isfahani</span>
+                    </h4>
+                    <div class="section-body">
+                        <div id="mufradat-root" class="mufradat-root"></div>
+                        <div id="mufradat-text" class="mufradat-text"></div>
+                        <div id="mufradat-verses" class="mufradat-verses"></div>
+                    </div>
                 </div>
 
-                <div id="furuq-section" class="panel-section" style="display:none">
-                    <h4>الفروق اللغوية — Linguistic Distinctions</h4>
-                    <div id="furuq-list"></div>
+                <div id="furuq-section" class="panel-section collapsed" style="display:none">
+                    <h4 class="section-toggle">
+                        <span class="chevron">▸</span>
+                        <span class="section-title">الفروق اللغوية — Linguistic Distinctions</span>
+                        <span class="section-desc">How near-synonyms differ in meaning and usage</span>
+                    </h4>
+                    <div class="section-body">
+                        <div id="furuq-list"></div>
+                    </div>
                 </div>
 
-                <div id="root-family-section" class="panel-section" style="display:none">
-                    <h4>الأسرة الدلالية — Semantic Family</h4>
-                    <div id="root-family-info"></div>
+                <div id="root-family-section" class="panel-section collapsed" style="display:none">
+                    <h4 class="section-toggle">
+                        <span class="chevron">▸</span>
+                        <span class="section-title">الأسرة الدلالية — Semantic Family</span>
+                        <span class="section-desc">Roots that share a thematic field</span>
+                    </h4>
+                    <div class="section-body">
+                        <div id="root-family-info"></div>
+                    </div>
                 </div>
 
-                <div id="cooccur-section" class="panel-section" style="display:none">
-                    <h4>الجذور المصاحبة — Co-occurring Roots</h4>
-                    <div id="cooccur-list" class="cooccur-list"></div>
+                <div id="cooccur-section" class="panel-section collapsed" style="display:none">
+                    <h4 class="section-toggle">
+                        <span class="chevron">▸</span>
+                        <span class="section-title">الجذور المصاحبة — Co-occurring Roots</span>
+                        <span class="section-desc">Roots that frequently appear alongside this one</span>
+                    </h4>
+                    <div class="section-body">
+                        <div id="cooccur-list" class="cooccur-list"></div>
+                    </div>
                 </div>
 
-                <div class="panel-section">
-                    <h4 id="connected-header">الآيات المتصلة — Connected Verses</h4>
-                    <div id="connected-verses"></div>
-                    <button id="show-more-btn" style="display:none" class="show-more">عرض المزيد</button>
+                <div class="panel-section" id="connected-section">
+                    <h4 class="section-toggle" id="connected-header">
+                        <span class="chevron">▾</span>
+                        <span class="section-title">الآيات المتصلة — Connected Verses</span>
+                        <span class="section-desc">Every verse containing this root</span>
+                    </h4>
+                    <div class="section-body">
+                        <div id="connected-verses"></div>
+                        <button id="show-more-btn" style="display:none" class="show-more">عرض المزيد</button>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -96,6 +126,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=13"></script>
+    <script src="js/app.js?v=14"></script>
 </body>
 </html>

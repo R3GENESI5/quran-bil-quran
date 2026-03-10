@@ -425,17 +425,72 @@ body {
 [data-theme="dark"] .rev-label.makki { color: #d4944f; }
 [data-theme="dark"] .rev-label.madani { color: #56b07a; }
 
-/* ── Panel Sections ─────────────────────────────── */
+/* ── Panel Sections (Accordion) ─────────────────── */
 .panel-section {
-    margin-top: 20px;
-    padding-top: 16px;
+    margin-top: 0;
+    padding-top: 0;
     border-top: 1px solid var(--border);
 }
 
 .panel-section h4 {
     font-size: 0.9rem;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 0;
+}
+
+/* Accordion toggle header */
+.section-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    padding: 12px 0;
+    margin: 0;
+    transition: color 0.15s;
+}
+.section-toggle:hover { color: var(--gold); }
+
+.section-toggle .chevron {
+    font-size: 0.65rem;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    opacity: 0.6;
+}
+
+.section-toggle .section-title {
+    flex: 1;
+}
+
+.section-desc {
+    display: block;
+    width: 100%;
+    font-family: var(--font-en);
+    font-size: 0.7rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-muted);
+    opacity: 0.6;
+    direction: ltr;
+    text-align: left;
+    margin-top: 1px;
+    line-height: 1.4;
+}
+
+/* Collapsible body */
+.section-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.25s ease;
+    max-height: 8000px;
+    opacity: 1;
+}
+
+.panel-section.collapsed .section-body {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ── Family Info ────────────────────────────────── */

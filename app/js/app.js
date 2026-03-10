@@ -241,6 +241,17 @@ const App = {
             localStorage.setItem('qbq-text-scale', this.textScaleIdx);
         });
 
+        // Accordion toggle for panel sections
+        this.$('root-panel').addEventListener('click', (e) => {
+            const toggle = e.target.closest('.section-toggle');
+            if (!toggle) return;
+            const section = toggle.closest('.panel-section');
+            if (!section) return;
+            const chevron = toggle.querySelector('.chevron');
+            section.classList.toggle('collapsed');
+            chevron.textContent = section.classList.contains('collapsed') ? '\u25B8' : '\u25BE';
+        });
+
         // Root search
         this.$('root-search-btn').addEventListener('click', () => this.toggleSearch());
 
@@ -547,6 +558,20 @@ const App = {
 
         // Connected verses
         this.renderConnectedVerses(root);
+
+        // Reset accordion: collapse all except connected verses
+        ['mufradat-section', 'furuq-section', 'root-family-section', 'cooccur-section'].forEach(id => {
+            const sec = this.$(id);
+            sec.classList.add('collapsed');
+            const ch = sec.querySelector('.chevron');
+            if (ch) ch.textContent = '\u25B8';
+        });
+        const connSec = this.$('connected-section');
+        if (connSec) {
+            connSec.classList.remove('collapsed');
+            const ch = connSec.querySelector('.chevron');
+            if (ch) ch.textContent = '\u25BE';
+        }
 
         // Show panel
         panel.classList.add('panel-visible');
@@ -886,9 +911,9 @@ const App = {
             container.appendChild(group);
         });
 
-        // Update header count
-        this.$('connected-header').textContent =
-            `الآيات المتصلة — ${verseKeys.length} Connected Verses`;
+        // Update header count (target .section-title to preserve chevron + desc)
+        const titleEl = this.$('connected-header').querySelector('.section-title');
+        if (titleEl) titleEl.textContent = `الآيات المتصلة — ${verseKeys.length} Connected Verses`;
 
         // Show more button
         const btn = this.$('show-more-btn');
