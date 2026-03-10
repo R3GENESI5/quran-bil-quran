@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <script>if(localStorage.getItem('qbq-dark-mode')==='true')document.documentElement.classList.add('dark-mode')</script>
 </head>
 <body>
@@ -21,8 +21,16 @@
             <button id="next-surah" class="nav-btn" title="السورة التالية">←</button>
         </div>
         <div class="header-left">
+            <div id="root-search-wrap" class="root-search-wrap">
+                <button id="root-search-btn" class="root-search-btn" title="ابحث عن جذر — Search root">⊕</button>
+                <button id="search-mode-btn" class="search-mode-btn" style="display:none" title="Toggle: Roots / Furuq">جذر</button>
+                <input id="root-search-input" class="root-search-input" type="search" placeholder="جذر، معنى، buckwalter..." autocomplete="off" dir="rtl" style="display:none">
+                <ul id="root-search-results" class="root-search-results" style="display:none"></ul>
+            </div>
             <button id="theme-toggle" class="theme-toggle-btn" title="Toggle dark mode">☽</button>
             <button id="translation-toggle" class="trans-toggle-btn" title="Toggle English translation">En</button>
+            <button id="translit-toggle" class="trans-toggle-btn" title="Toggle transliteration">T</button>
+            <button id="text-scale-btn" class="trans-toggle-btn" title="Increase text size">أ+</button>
             <a href="themes.html" class="themes-link" title="Thematic Connections">الأسر الدلالية ◎</a>
             <span id="surah-info" class="surah-meta"></span>
         </div>
@@ -49,6 +57,7 @@
                 <div id="root-buckwalter" class="root-translit"></div>
                 <div id="root-meaning" class="root-meaning"></div>
                 <div id="root-frequency" class="root-freq"></div>
+                <div id="root-revelation" class="root-revelation"></div>
 
                 <div id="mufradat-section" class="panel-section" style="display:none">
                     <h4>المفردات — Mufradat al-Quran</h4>
@@ -67,6 +76,11 @@
                     <div id="root-family-info"></div>
                 </div>
 
+                <div id="cooccur-section" class="panel-section" style="display:none">
+                    <h4>الجذور المصاحبة — Co-occurring Roots</h4>
+                    <div id="cooccur-list" class="cooccur-list"></div>
+                </div>
+
                 <div class="panel-section">
                     <h4 id="connected-header">الآيات المتصلة — Connected Verses</h4>
                     <div id="connected-verses"></div>
@@ -82,6 +96,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=5"></script>
+    <script src="js/app.js?v=13"></script>
 </body>
 </html>

@@ -17,6 +17,16 @@ const App = {
     // Dark mode
     darkMode: false,
 
+    // Root search
+    searchIndex: [],
+    searchOpen: false,
+    searchHighlight: -1,
+    searchDebounce: null,
+    searchMode: 'roots',   // 'roots' or 'furuq'
+
+    // Verse → roots reverse index (for co-occurrence)
+    verseRoots: {},         // { "1:1": Set(["سمو","أله","رحم"]), ... }
+
     // Thematic layer
     verseFamilies: {},          // { "1:1": Set(["earth_sky"]), ... }
     THEME_GROUPS: {
@@ -42,11 +52,22 @@ const App = {
     translationLoaded: false,
     showTranslation: false,
 
+    // Transliteration
+    translitData: null,
+    translitLoaded: false,
+    showTranslit: false,
+
+    // Text scale
+    TEXT_SCALES: [1, 1.15, 1.3, 1.5],
+    textScaleIdx: 0,
+
     // Tafsir
     TAFSIR_API: 'https://api.quran.com/api/v4',
     tafsirCache: {},          // { "tafsirId:verseKey": html }
+    localTafsirCache: {},     // { "ibn-kathir-ur:3": { "3:1": {...}, ... } }
     activeTafsir: 16,         // default: Muyassar (concise)
     TAFSIRS: {
+        // Arabic (API)
         16: 'التفسير الميسّر',
         14: 'ابن كثير',
         91: 'السعدي',
@@ -54,7 +75,19 @@ const App = {
         15: 'الطبري',
         90: 'القرطبي',
         93: 'الوسيط — الطنطاوي',
+        // Urdu (local)
+        'ibn-kathir-ur': 'ابن کثیر (اردو)',
+        'bayan-ul-quran': 'بیان القرآن — تھانوی',
+        // English (API)
+        169: 'Ibn Kathir (English)',
+        168: "Ma'ariful Qur'an (English)",
     },
+    TAFSIR_GROUPS: {
+        'عربي': [16, 14, 91, 94, 15, 90, 93],
+        'اردو': ['ibn-kathir-ur', 'bayan-ul-quran'],
+        'English': [169, 168],
+    },
+    LOCAL_TAFSIRS: new Set(['ibn-kathir-ur', 'bayan-ul-quran']),
 
     // DOM refs
     $: (id) => document.getElementById(id),
@@ -79,6 +112,8 @@ const App = {
             this.furuq = furuq;
 
             this.buildVerseFamilies();
+            this.buildVerseRootsIndex();
+            this.buildSearchIndex();
             this.setupUI();
             this.handleHash();
 
@@ -90,7 +125,21 @@ const App = {
                 this.showTranslation = true;
                 this.$('translation-toggle').classList.add('active');
             }
-            this.loadTranslation().then(() => this.renderSurah());
+            if (localStorage.getItem('qbq-show-translit') === 'true') {
+                this.showTranslit = true;
+                this.$('translit-toggle').classList.add('active');
+            }
+            // Restore text scale
+            const savedScale = parseInt(localStorage.getItem('qbq-text-scale') || '0');
+            if (savedScale > 0 && savedScale < this.TEXT_SCALES.length) {
+                this.textScaleIdx = savedScale;
+                document.documentElement.style.setProperty('--text-scale', this.TEXT_SCALES[savedScale]);
+                this.$('text-scale-btn').classList.add('active');
+            }
+            Promise.all([
+                this.loadTranslation(),
+                this.showTranslit ? this.loadTranslit() : Promise.resolve(),
+            ]).then(() => this.renderSurah());
         } catch (err) {
             console.error('Init failed:', err);
             document.querySelector('.loader-text').textContent = 'خطأ في التحميل';
@@ -132,7 +181,11 @@ const App = {
 
         // Keyboard nav
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') this.closePanel();
+            if (e.key === 'Escape') {
+                if (this.searchOpen) { this.toggleSearch(); return; }
+                this.closePanel();
+            }
+            if (e.target.closest('.root-search-input')) return;
             if (e.key === 'ArrowLeft' && !e.target.closest('select')) {
                 e.preventDefault();
                 if (this.currentSurah < 114) this.loadSurah(this.currentSurah + 1);
@@ -164,6 +217,88 @@ const App = {
             this.$('translation-toggle').classList.toggle('active', this.showTranslation);
             localStorage.setItem('qbq-show-translation', this.showTranslation);
             this.renderSurah();
+        });
+
+        // Transliteration toggle
+        this.$('translit-toggle').addEventListener('click', async () => {
+            if (!this.translitLoaded) {
+                this.$('translit-toggle').textContent = '···';
+                await this.loadTranslit();
+            }
+            this.showTranslit = !this.showTranslit;
+            this.$('translit-toggle').textContent = 'T';
+            this.$('translit-toggle').classList.toggle('active', this.showTranslit);
+            localStorage.setItem('qbq-show-translit', this.showTranslit);
+            this.renderSurah();
+        });
+
+        // Text scale toggle — cycles through sizes, wraps back to default
+        this.$('text-scale-btn').addEventListener('click', () => {
+            this.textScaleIdx = (this.textScaleIdx + 1) % this.TEXT_SCALES.length;
+            const scale = this.TEXT_SCALES[this.textScaleIdx];
+            document.documentElement.style.setProperty('--text-scale', scale);
+            this.$('text-scale-btn').classList.toggle('active', this.textScaleIdx > 0);
+            localStorage.setItem('qbq-text-scale', this.textScaleIdx);
+        });
+
+        // Root search
+        this.$('root-search-btn').addEventListener('click', () => this.toggleSearch());
+
+        // Search mode toggle (roots ↔ furuq)
+        this.$('search-mode-btn').addEventListener('click', () => {
+            this.searchMode = this.searchMode === 'roots' ? 'furuq' : 'roots';
+            const btn = this.$('search-mode-btn');
+            const input = this.$('root-search-input');
+            if (this.searchMode === 'furuq') {
+                btn.textContent = 'فروق';
+                btn.classList.add('furuq-mode');
+                input.placeholder = 'ابحث في الفروق اللغوية...';
+            } else {
+                btn.textContent = 'جذر';
+                btn.classList.remove('furuq-mode');
+                input.placeholder = 'جذر، معنى، buckwalter...';
+            }
+            // Re-run current query in new mode
+            const q = input.value.trim();
+            if (q) this.onSearchInput(q);
+        });
+
+        this.$('root-search-input').addEventListener('input', (e) => {
+            clearTimeout(this.searchDebounce);
+            this.searchDebounce = setTimeout(() => this.onSearchInput(e.target.value), 100);
+        });
+
+        this.$('root-search-input').addEventListener('keydown', (e) => {
+            const sel = this.searchMode === 'furuq' ? 'li.furuq-item' : 'li[data-root]';
+            const items = this.$('root-search-results').querySelectorAll(sel);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.searchHighlight = Math.min(this.searchHighlight + 1, items.length - 1);
+                this.updateSearchHighlight();
+                if (items[this.searchHighlight]) items[this.searchHighlight].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.searchHighlight = Math.max(this.searchHighlight - 1, 0);
+                this.updateSearchHighlight();
+                if (items[this.searchHighlight]) items[this.searchHighlight].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter' && this.searchHighlight >= 0 && items[this.searchHighlight]) {
+                e.preventDefault();
+                if (this.searchMode === 'furuq') {
+                    items[this.searchHighlight].classList.toggle('expanded');
+                } else {
+                    this.onSearchSelect(items[this.searchHighlight].dataset.root);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.toggleSearch();
+            }
+        });
+
+        // Close search on outside click
+        document.addEventListener('click', (e) => {
+            if (this.searchOpen && !e.target.closest('#root-search-wrap')) {
+                this.toggleSearch();
+            }
         });
 
         // Hash navigation
@@ -322,6 +457,17 @@ const App = {
                 }
             }
 
+            // Transliteration row
+            if (this.showTranslit && this.translitData) {
+                const tlText = this.translitData[verse.k];
+                if (tlText) {
+                    const tlEl = document.createElement('div');
+                    tlEl.className = 'verse-transliteration';
+                    tlEl.innerHTML = tlText;  // HTML with <u>/<b> tags
+                    el.appendChild(tlEl);
+                }
+            }
+
             container.appendChild(el);
         });
 
@@ -383,6 +529,9 @@ const App = {
         this.$('root-meaning').style.display = data.m ? 'block' : 'none';
         this.$('root-frequency').textContent = `Appears in ${data.f} verses across the Quran`;
 
+        // Makki / Madani revelation breakdown
+        this.renderRevelation(data);
+
         // Mufradat (classical lexicon)
         this.renderMufradat(root);
 
@@ -390,7 +539,11 @@ const App = {
         this.renderFuruq(root);
 
         // Family info
-        this.renderFamilyInfo(root, data.fam || []);
+        const fam = data.fam ? (Array.isArray(data.fam) ? data.fam : [data.fam]) : [];
+        this.renderFamilyInfo(root, fam);
+
+        // Co-occurring roots
+        this.renderCooccurrence(root);
 
         // Connected verses
         this.renderConnectedVerses(root);
@@ -400,16 +553,57 @@ const App = {
         document.body.classList.add('panel-open');
     },
 
+    renderRevelation(data) {
+        const el = this.$('root-revelation');
+        const verses = data.v || [];
+        if (verses.length === 0) { el.innerHTML = ''; return; }
+
+        // Build surah→place lookup from surahList
+        const placeMap = {};
+        for (const s of this.surahList) placeMap[s.number] = s.revelation_place;
+
+        let makki = 0, madani = 0;
+        const seen = new Set();
+        for (const vk of verses) {
+            const sn = parseInt(vk.split(':')[0], 10);
+            if (!seen.has(sn + ':' + vk)) {
+                if (placeMap[sn] === 'makkah') makki++;
+                else madani++;
+            }
+        }
+        const total = makki + madani;
+        const mPct = Math.round((makki / total) * 100);
+        const dPct = 100 - mPct;
+
+        // Determine dominant label
+        let label = '';
+        if (mPct >= 85) label = 'Mostly Makki';
+        else if (dPct >= 85) label = 'Mostly Madani';
+        else if (mPct >= 60) label = 'Leans Makki';
+        else if (dPct >= 60) label = 'Leans Madani';
+        else label = 'Mixed';
+
+        el.innerHTML =
+            `<span class="rev-label makki">Makki ${mPct}%</span>` +
+            `<span class="rev-bar"><span class="rev-makki" style="width:${mPct}%"></span>` +
+            `<span class="rev-madani" style="width:${dPct}%"></span></span>` +
+            `<span class="rev-label madani">${dPct}% Madani</span>`;
+    },
+
     renderMufradat(root) {
         const section = this.$('mufradat-section');
         const entry = this.mufradat[root];
 
         if (!entry) {
             section.style.display = 'none';
+            this._mufradatVerses = null;
             return;
         }
 
         section.style.display = 'block';
+
+        // Store cited verses for cross-referencing in connected verses
+        this._mufradatVerses = entry.v ? new Set(entry.v) : null;
 
         // Original root heading from al-Raghib
         this.$('mufradat-root').textContent = entry.r !== root
@@ -419,14 +613,17 @@ const App = {
         // Definition text
         this.$('mufradat-text').textContent = entry.t;
 
-        // Verse references
+        // Verse references with cross-reference stats
         const versesEl = this.$('mufradat-verses');
         versesEl.innerHTML = '';
 
         if (entry.v && entry.v.length) {
+            const rootData = this.rootsIndex[root];
+            const totalVerses = rootData ? (rootData.v ? rootData.v.length : rootData.f || 0) : 0;
+
             const label = document.createElement('span');
             label.className = 'mufradat-verses-label';
-            label.textContent = `الآيات المذكورة (${entry.vc})`;
+            label.textContent = `الآيات المذكورة — al-Raghib cited ${entry.vc} of ${totalVerses} verses`;
             versesEl.appendChild(label);
 
             const chips = document.createElement('div');
@@ -575,6 +772,58 @@ const App = {
         });
     },
 
+    renderCooccurrence(root) {
+        const section = this.$('cooccur-section');
+        const list = this.$('cooccur-list');
+        list.innerHTML = '';
+
+        const coroots = this.getCooccurringRoots(root);
+        if (!coroots.length) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        const totalVerses = this.rootsIndex[root]?.v?.length || 1;
+
+        coroots.forEach(cr => {
+            const item = document.createElement('div');
+            item.className = 'cooccur-item';
+
+            const pct = Math.round((cr.shared / totalVerses) * 100);
+
+            // Clickable root chip
+            const rootEl = document.createElement('a');
+            rootEl.className = 'cooccur-root';
+            rootEl.href = '#';
+            rootEl.textContent = cr.root.split('').join(' ');
+            rootEl.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.selectedRoot = cr.root;
+                this.showAllVerses = false;
+                this.openPanel(cr.root);
+                this.highlightRoot(cr.root);
+            });
+
+            // Info line
+            const info = document.createElement('div');
+            info.className = 'cooccur-info';
+            const bwSpan = cr.bw ? `<span class="cooccur-bw">${cr.bw}</span> ` : '';
+            info.innerHTML = `${bwSpan}<span class="cooccur-meaning">${cr.meaning}</span>`;
+
+            // Bar
+            const bar = document.createElement('div');
+            bar.className = 'cooccur-bar-wrap';
+            bar.innerHTML = `<div class="cooccur-bar" style="width:${pct}%"></div>` +
+                `<span class="cooccur-stat">${cr.shared} shared · ${pct}%</span>`;
+
+            item.appendChild(rootEl);
+            item.appendChild(info);
+            item.appendChild(bar);
+            list.appendChild(item);
+        });
+    },
+
     renderConnectedVerses(root) {
         const data = this.rootsIndex[root];
         if (!data) return;
@@ -609,6 +858,11 @@ const App = {
                 const verseEl = document.createElement('a');
                 verseEl.className = 'connected-verse';
                 verseEl.href = `#${vk}`;
+
+                // Mark verses cited by al-Raghib in Mufradat
+                if (this._mufradatVerses && this._mufradatVerses.has(vk)) {
+                    verseEl.classList.add('raghib-cited');
+                }
 
                 const keyEl = document.createElement('span');
                 keyEl.className = 'connected-verse-key';
@@ -650,10 +904,12 @@ const App = {
     buildVerseFamilies() {
         const vf = {};
         for (const [root, data] of Object.entries(this.rootsIndex)) {
-            if (!data.fam || !data.fam.length) continue;
+            if (!data.fam) continue;
+            const fams = Array.isArray(data.fam) ? data.fam : [data.fam];
+            if (!fams.length) continue;
             for (const vk of data.v) {
                 if (!vf[vk]) vf[vk] = new Set();
-                for (const f of data.fam) {
+                for (const f of fams) {
                     if (this.families[f]) vf[vk].add(f);
                 }
             }
@@ -787,21 +1043,34 @@ const App = {
         }
     },
 
+    // ── Transliteration ────────────────────────────
+    async loadTranslit() {
+        if (this.translitLoaded) return;
+        try {
+            this.translitData = await fetch('data/translations/transliteration.json').then(r => r.json());
+            this.translitLoaded = true;
+        } catch (err) {
+            console.error('Transliteration load failed:', err);
+        }
+    },
+
     // ── Tafsir ──────────────────────────────────────
     sanitizeTafsir(html) {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
-        // Strip all tags except safe ones
-        const allowed = new Set(['P', 'BR', 'B', 'STRONG', 'I', 'EM', 'SPAN', 'DIV']);
+        // Strip all tags except safe ones; keep safe attributes
+        const allowedTags = new Set(['P', 'BR', 'B', 'STRONG', 'I', 'EM', 'SPAN', 'DIV']);
+        const allowedAttrs = new Set(['lang', 'dir', 'class']);
         const walk = (node) => {
             [...node.childNodes].forEach(child => {
                 if (child.nodeType === 1) { // Element
-                    if (!allowed.has(child.tagName)) {
-                        // Replace with its text content
+                    if (!allowedTags.has(child.tagName)) {
                         child.replaceWith(document.createTextNode(child.textContent));
                     } else {
-                        // Remove all attributes (prevent XSS via onclick, style, etc.)
-                        [...child.attributes].forEach(a => child.removeAttribute(a.name));
+                        // Keep only safe attributes
+                        [...child.attributes].forEach(a => {
+                            if (!allowedAttrs.has(a.name)) child.removeAttribute(a.name);
+                        });
                         walk(child);
                     }
                 }
@@ -815,13 +1084,28 @@ const App = {
         const cacheKey = `${tafsirId}:${verseKey}`;
         if (this.tafsirCache[cacheKey]) return this.tafsirCache[cacheKey];
 
-        const [surah, ayah] = verseKey.split(':');
-        const url = `${this.TAFSIR_API}/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`API ${resp.status}`);
-        const data = await resp.json();
+        let raw;
+        if (this.LOCAL_TAFSIRS.has(tafsirId)) {
+            // Local tafsir — load per-surah file, cache entire surah
+            const surah = verseKey.split(':')[0];
+            const surahCacheKey = `${tafsirId}:${surah}`;
+            if (!this.localTafsirCache[surahCacheKey]) {
+                const resp = await fetch(`data/tafsirs/${tafsirId}/${surah}.json`);
+                if (!resp.ok) throw new Error(`Local tafsir ${resp.status}`);
+                this.localTafsirCache[surahCacheKey] = await resp.json();
+            }
+            const entry = this.localTafsirCache[surahCacheKey][verseKey];
+            raw = entry?.text || '';
+        } else {
+            // API tafsir (Arabic + English)
+            const [surah, ayah] = verseKey.split(':');
+            const url = `${this.TAFSIR_API}/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`API ${resp.status}`);
+            const data = await resp.json();
+            raw = data.tafsir?.text || '';
+        }
 
-        const raw = data.tafsir?.text || '';
         const clean = this.sanitizeTafsir(raw);
         this.tafsirCache[cacheKey] = clean;
         return clean;
@@ -871,26 +1155,38 @@ const App = {
         }
     },
 
+    // Determine text direction for a tafsir
+    tafsirDir(id) {
+        return this.TAFSIR_GROUPS['English']?.includes(typeof id === 'string' ? id : +id) ? 'ltr' : 'rtl';
+    },
+
     renderTafsirBlock(verseKey, block, html) {
         const inner = block.querySelector('.tafsir-inner');
+        const dir = this.tafsirDir(this.activeTafsir);
 
-        // Build selector options
-        const opts = Object.entries(this.TAFSIRS)
-            .map(([id, name]) => `<option value="${id}"${+id === this.activeTafsir ? ' selected' : ''}>${name}</option>`)
-            .join('');
+        // Build grouped selector options
+        const opts = Object.entries(this.TAFSIR_GROUPS)
+            .map(([group, ids]) => {
+                const options = ids.map(id =>
+                    `<option value="${id}"${String(id) === String(this.activeTafsir) ? ' selected' : ''}>${this.TAFSIRS[id]}</option>`
+                ).join('');
+                return `<optgroup label="${group}">${options}</optgroup>`;
+            }).join('');
 
         inner.innerHTML = `
             <div class="tafsir-toolbar">
                 <span class="tafsir-label">التفسير</span>
                 <select class="tafsir-select">${opts}</select>
             </div>
-            <div class="tafsir-text">${html || '<em>لا يتوفر تفسير لهذه الآية</em>'}</div>`;
+            <div class="tafsir-text" dir="${dir}">${html || '<em>لا يتوفر تفسير لهذه الآية</em>'}</div>`;
 
         // Tafsir switch handler
         inner.querySelector('.tafsir-select').addEventListener('change', async (e) => {
-            const newId = parseInt(e.target.value);
+            const val = e.target.value;
+            const newId = isNaN(val) ? val : parseInt(val);
             this.activeTafsir = newId;
             const textEl = inner.querySelector('.tafsir-text');
+            textEl.dir = this.tafsirDir(newId);
             textEl.innerHTML = `<div class="tafsir-loading">جارٍ تحميل التفسير...</div>`;
             try {
                 const newHtml = await this.fetchTafsir(newId, verseKey);
@@ -913,6 +1209,241 @@ const App = {
                 });
             }
         });
+    },
+
+    // ── Root Search ──────────────────────────────────
+    buildSearchIndex() {
+        this.searchIndex = [];
+        for (const [root, data] of Object.entries(this.rootsIndex)) {
+            this.searchIndex.push({
+                root,
+                bw: (data.b || '').toLowerCase(),
+                meaning: (data.m || '').toLowerCase(),
+                freq: data.f || (data.v ? data.v.length : 0),
+            });
+        }
+        // Pre-sort by frequency descending
+        this.searchIndex.sort((a, b) => b.freq - a.freq);
+    },
+
+    // Build reverse index: verse → set of roots (for co-occurrence)
+    buildVerseRootsIndex() {
+        this.verseRoots = {};
+        for (const [root, data] of Object.entries(this.rootsIndex)) {
+            const verses = data.v || [];
+            for (const vk of verses) {
+                if (!this.verseRoots[vk]) this.verseRoots[vk] = new Set();
+                this.verseRoots[vk].add(root);
+            }
+        }
+    },
+
+    // Compute top co-occurring roots for a given root
+    getCooccurringRoots(root, topN = 8) {
+        const data = this.rootsIndex[root];
+        if (!data || !data.v) return [];
+
+        const counts = {};
+        for (const vk of data.v) {
+            const siblings = this.verseRoots[vk];
+            if (!siblings) continue;
+            for (const r of siblings) {
+                if (r !== root) counts[r] = (counts[r] || 0) + 1;
+            }
+        }
+
+        // Filter: must share at least 2 verses and be < 90% overlap
+        // (excludes أله which co-occurs with everything)
+        const totalVerses = data.v.length;
+        return Object.entries(counts)
+            .filter(([, c]) => c >= 2 && c / totalVerses < 0.9)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, topN)
+            .map(([r, c]) => ({
+                root: r,
+                shared: c,
+                meaning: (this.rootsIndex[r]?.m || '').slice(0, 50),
+                bw: this.rootsIndex[r]?.b || '',
+                total: this.rootsIndex[r]?.v?.length || 0,
+            }));
+    },
+
+    toggleSearch() {
+        const input = this.$('root-search-input');
+        const btn = this.$('root-search-btn');
+        const modeBtn = this.$('search-mode-btn');
+        this.searchOpen = !this.searchOpen;
+
+        if (this.searchOpen) {
+            input.style.display = 'block';
+            modeBtn.style.display = 'inline-block';
+            btn.classList.add('active');
+            input.value = '';
+            input.focus();
+        } else {
+            input.style.display = 'none';
+            modeBtn.style.display = 'none';
+            btn.classList.remove('active');
+            this.$('root-search-results').style.display = 'none';
+            this.searchHighlight = -1;
+        }
+    },
+
+    onSearchInput(query) {
+        const results = this.$('root-search-results');
+        query = query.trim();
+
+        if (!query) {
+            results.style.display = 'none';
+            this.searchHighlight = -1;
+            return;
+        }
+
+        if (this.searchMode === 'furuq') {
+            this.onFuruqSearch(query);
+            return;
+        }
+
+        const isArabic = /[\u0600-\u06FF]/.test(query);
+        const lq = query.toLowerCase();
+
+        let matches;
+        if (isArabic) {
+            matches = this.searchIndex.filter(e => e.root.includes(query));
+        } else {
+            matches = this.searchIndex.filter(e =>
+                e.bw.includes(lq) || e.meaning.includes(lq)
+            );
+        }
+
+        matches = matches.slice(0, 15);
+        this.searchHighlight = -1;
+        this.renderSearchResults(matches, query);
+    },
+
+    onFuruqSearch(query) {
+        const ul = this.$('root-search-results');
+        const matches = this.furuq.filter(pair =>
+            pair.a.includes(query) || pair.b.includes(query) || pair.t.includes(query)
+        ).slice(0, 20);
+
+        this.searchHighlight = -1;
+        ul.innerHTML = '';
+
+        if (!matches.length) {
+            ul.innerHTML = '<li class="sr-empty">لا توجد فروق — No distinctions found</li>';
+            ul.style.display = 'block';
+            return;
+        }
+
+        matches.forEach((pair, i) => {
+            const li = document.createElement('li');
+            li.className = 'furuq-item';
+            li.dataset.index = i;
+
+            const header = document.createElement('div');
+            header.className = 'furuq-pair-header';
+            header.innerHTML = `<span>${pair.a}</span><span class="furuq-vs">vs</span><span>${pair.b}</span>`;
+
+            const preview = document.createElement('div');
+            preview.className = 'furuq-text-preview';
+            preview.textContent = pair.t;
+
+            const hint = document.createElement('div');
+            hint.className = 'furuq-expand-hint';
+            hint.textContent = 'click to expand';
+
+            li.appendChild(header);
+            li.appendChild(preview);
+            li.appendChild(hint);
+
+            li.addEventListener('click', () => li.classList.toggle('expanded'));
+            li.addEventListener('mouseenter', () => {
+                this.searchHighlight = i;
+                this.updateSearchHighlight();
+            });
+
+            ul.appendChild(li);
+        });
+
+        ul.style.display = 'block';
+    },
+
+    renderSearchResults(matches, query) {
+        const ul = this.$('root-search-results');
+        ul.innerHTML = '';
+
+        if (!matches.length) {
+            ul.innerHTML = '<li class="sr-empty">No roots found</li>';
+            ul.style.display = 'block';
+            return;
+        }
+
+        matches.forEach((m, i) => {
+            const li = document.createElement('li');
+            li.dataset.index = i;
+            li.dataset.root = m.root;
+
+            const rootSpan = document.createElement('span');
+            rootSpan.className = 'sr-root';
+            rootSpan.textContent = m.root.split('').join(' ');
+
+            const info = document.createElement('div');
+            info.className = 'sr-info';
+
+            const bw = document.createElement('div');
+            bw.className = 'sr-bw';
+            bw.textContent = m.bw;
+
+            const meaning = document.createElement('div');
+            meaning.className = 'sr-meaning';
+            const data = this.rootsIndex[m.root];
+            meaning.textContent = (data.m || '').slice(0, 80);
+
+            info.appendChild(bw);
+            info.appendChild(meaning);
+
+            const count = document.createElement('span');
+            count.className = 'sr-count';
+            count.textContent = `${m.freq}v`;
+
+            li.appendChild(rootSpan);
+            li.appendChild(info);
+            li.appendChild(count);
+
+            li.addEventListener('click', () => this.onSearchSelect(m.root));
+            li.addEventListener('mouseenter', () => {
+                this.searchHighlight = i;
+                this.updateSearchHighlight();
+            });
+
+            ul.appendChild(li);
+        });
+
+        ul.style.display = 'block';
+    },
+
+    updateSearchHighlight() {
+        const sel = this.searchMode === 'furuq' ? 'li.furuq-item' : 'li[data-root]';
+        const items = this.$('root-search-results').querySelectorAll(sel);
+        items.forEach((li, i) => {
+            li.classList.toggle('active', i === this.searchHighlight);
+        });
+    },
+
+    onSearchSelect(root) {
+        // Close search
+        this.searchOpen = false;
+        this.$('root-search-input').style.display = 'none';
+        this.$('root-search-btn').classList.remove('active');
+        this.$('root-search-results').style.display = 'none';
+        this.searchHighlight = -1;
+
+        // Open the root panel (reuses existing logic)
+        this.selectedRoot = root;
+        this.showAllVerses = false;
+        this.openPanel(root);
+        this.highlightRoot(root);
     },
 
     // ── Navigation ─────────────────────────────────
