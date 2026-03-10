@@ -240,11 +240,17 @@ const App = {
             const textEl = document.createElement('div');
             textEl.className = 'verse-text';
 
+            // Quranic pause/sajdah markers — present in word arrays but absent from WBW data
+            const QUR_MARKERS = 'ۖۗۘۙۚۛۜ۞۩';
+            let wbwIdx = 0; // separate counter: only advances for real words, not markers
+
             verse.words.forEach((w, i) => {
                 const span = document.createElement('span');
                 span.className = 'word';
                 span.textContent = w.t;
                 span.dataset.index = i;
+
+                const isMarker = w.t.trim().length === 1 && QUR_MARKERS.includes(w.t.trim());
 
                 if (w.r) {
                     span.classList.add('word-has-root');
@@ -253,12 +259,14 @@ const App = {
                 }
 
                 // Word-by-word tooltip (always shown when data is loaded)
-                if (this.wbwData) {
+                // Uses wbwIdx (skips markers) instead of i to stay aligned
+                if (this.wbwData && !isMarker) {
                     const wbwVerse = this.wbwData[verse.k];
-                    if (wbwVerse && wbwVerse[i]) {
-                        span.dataset.wbw = wbwVerse[i];
+                    if (wbwVerse && wbwVerse[wbwIdx]) {
+                        span.dataset.wbw = wbwVerse[wbwIdx];
                         span.classList.add('word-has-wbw');
                     }
+                    wbwIdx++;
                 }
 
                 textEl.appendChild(span);
