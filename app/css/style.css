@@ -310,6 +310,25 @@ body {
     transform: translateX(0);
 }
 
+/* ── Panel Backdrop (mobile) ────────────────────── */
+.panel-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 49;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.panel-backdrop.visible {
+    opacity: 1;
+}
+
+/* ── Drawer Handle (mobile) ─────────────────────── */
+.drawer-handle {
+    display: none;
+}
+
 .panel-header {
     display: flex;
     align-items: center;
@@ -359,6 +378,16 @@ body {
     font-family: var(--font-en);
     font-size: 0.85rem;
     color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 4px;
+    direction: ltr;
+}
+
+.root-gloss {
+    font-family: var(--font-en);
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--gold);
     text-align: center;
     margin-bottom: 12px;
     direction: ltr;
@@ -1312,34 +1341,109 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ── Responsive ─────────────────────────────────── */
+
+/* Tablet: general layout adjustments */
 @media (max-width: 900px) {
+    #reader { padding: 20px 5% 60px; }
+    .verse-text { font-size: calc(1.35rem * var(--text-scale, 1)); }
+    .header-left { gap: 4px; }
+    .header-left .themes-link,
+    .header-left .surah-meta { display: none; }
+    .root-search-input { width: 150px; }
+    .root-search-results { width: 280px; }
+    .logo { font-size: 1.1rem; }
+    #surah-select { min-width: 140px; font-size: 0.95rem; }
+}
+
+/* Tablet only: panel stays as full-width left slide */
+@media (max-width: 900px) and (min-width: 769px) {
     :root { --panel-width: 100vw; }
+    #root-panel { top: 0; height: 100vh; }
+    .panel-open #main { margin-left: 0; }
+}
 
+/* ── Mobile: Bottom Drawer ─────────────────────── */
+@media (max-width: 768px) {
     #root-panel {
-        top: 0;
-        height: 100vh;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 70vh;
+        max-height: 70vh;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 60;
     }
-
+    #root-panel.panel-visible {
+        transform: translateY(0);
+    }
     .panel-open #main {
         margin-left: 0;
     }
 
-    #reader { padding: 20px 5% 60px; }
+    /* Drawer drag handle */
+    .drawer-handle {
+        display: flex;
+        justify-content: center;
+        padding: 10px 0 4px;
+        cursor: grab;
+        touch-action: none;
+    }
+    .drawer-handle::after {
+        content: '';
+        width: 36px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+    }
 
-    .verse-text { font-size: calc(1.35rem * var(--text-scale, 1)); }
+    /* Panel header: not sticky inside bottom drawer */
+    .panel-header {
+        position: relative;
+    }
 
-    .header-left { gap: 4px; }
-    .header-left .themes-link,
-    .header-left .surah-meta { display: none; }
+    /* Show backdrop on mobile */
+    .panel-backdrop {
+        display: block;
+    }
 
-    .root-search-input { width: 150px; }
-    .root-search-results { width: 280px; }
+    /* Touch targets: larger tappable area for roots */
+    .word-has-root {
+        padding: 4px 2px;
+        -webkit-tap-highlight-color: transparent;
+    }
 
-    .logo { font-size: 1.1rem; }
+    /* Buttons: 44px minimum touch target */
+    .nav-btn,
+    #theme-toggle,
+    #translation-toggle,
+    #translit-toggle,
+    #text-scale-btn,
+    #root-search-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
 
-    #surah-select { min-width: 140px; font-size: 0.95rem; }
+    #surah-select {
+        min-width: 120px;
+        font-size: 0.9rem;
+    }
+
+    /* Verse numbers: visual + padding for touch target */
+    .verse-num {
+        width: 28px;
+        height: 28px;
+        padding: 8px;
+        box-sizing: content-box;
+    }
 }
 
+/* Small phones */
 @media (max-width: 500px) {
     #header { padding: 0 12px; }
     .verse-num { width: 24px; height: 24px; font-size: 0.6rem; }

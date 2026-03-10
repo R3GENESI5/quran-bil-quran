@@ -116,7 +116,7 @@ header {
 
 /* ── Chart ────────────────────────────────────── */
 #chart { display: flex; justify-content: center; padding: 10px; }
-#chart svg { max-width: 100%; height: auto; }
+#chart svg { max-width: 100%; height: auto; touch-action: none; }
 .link { fill: none; pointer-events: none; }
 .link-active { stroke: #b8860b !important; stroke-opacity: 0.8 !important; }
 .link-dimmed { stroke-opacity: 0.008 !important; }
@@ -289,6 +289,17 @@ header {
     <div class="control-group">
         <label for="bundling">Bundling:</label>
         <input type="range" id="bundling" min="0" max="100" value="85">
+    </div>
+    <div class="control-group">
+        <label for="label-size">Labels:</label>
+        <input type="range" id="label-size" min="10" max="28" value="12">
+    </div>
+    <div class="control-group">
+        <button id="reset-zoom" style="
+            border: 1px solid var(--border); border-radius: 6px;
+            background: var(--surface); color: var(--text-muted);
+            padding: 4px 10px; font-size: 0.8rem; cursor: pointer;
+        ">Reset Zoom</button>
     </div>
 </div>
 <div id="stats"></div>
@@ -643,8 +654,11 @@ header {
         .attr('width', width)
         .attr('height', height);
 
+    // ── Zoom container (wraps all visual layers) ────
+    const zoomG = svg.append('g').attr('class', 'zoom-container');
+
     // ── Group Arcs ──────────────────────────────────
-    const arcGroup = svg.append('g');
+    const arcGroup = zoomG.append('g');
     const arcPaths = [];
 
     function drawGroupArcs() {
@@ -676,10 +690,10 @@ header {
     drawGroupArcs();
 
     // ── Link Group ──────────────────────────────────
-    const linkGroup = svg.append('g');
+    const linkGroup = zoomG.append('g');
 
     // ── Node Group ──────────────────────────────────
-    const nodeGroup = svg.append('g');
+    const nodeGroup = zoomG.append('g');
     const nodeGs = nodeGroup.selectAll('g')
         .data(orderedIds.map(id => ({ id, pos: nodePositions[id] })))
         .join('g')
@@ -710,6 +724,19 @@ header {
         })
         .attr('fill', d => groupColors[famGroup[d.id] ?? 0])
         .text(d => families[d.id].name_ar);
+
+    // ── Pan / Zoom ──────────────────────────────────
+    const zoom = d3.zoom()
+        .scaleExtent([0.5, 5])
+        .on('zoom', (event) => {
+            zoomG.attr('transform', event.transform);
+        });
+    svg.call(zoom);
+    svg.on('dblclick.zoom', null); // prevent double-tap zoom conflicting with node clicks
+
+    document.getElementById('reset-zoom').addEventListener('click', () => {
+        svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    });
 
     // ── State ───────────────────────────────────────
     let currentSurah = null;
@@ -884,6 +911,12 @@ header {
         currentT = +e.target.value / 100;
         interpolateEdges(currentEdges, currentT);
         linkGroup.selectAll('path').attr('d', d => lineGen(d.points));
+    });
+
+    // Label size slider
+    document.getElementById('label-size').addEventListener('input', (e) => {
+        const size = +e.target.value;
+        nodeGroup.selectAll('.node-label').style('font-size', size + 'px');
     });
 
     // ── Tooltip ─────────────────────────────────────

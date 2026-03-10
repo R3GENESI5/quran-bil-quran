@@ -14,6 +14,10 @@ const App = {
     showAllVerses: false,
     PREVIEW_LIMIT: 25,
 
+    // Mobile
+    isMobile: false,
+    _drawerDrag: null,
+
     // Dark mode
     darkMode: false,
 
@@ -147,7 +151,15 @@ const App = {
     },
 
     // ── UI Setup ───────────────────────────────────
+    checkMobile() {
+        this.isMobile = window.matchMedia('(max-width: 768px)').matches;
+    },
+
     setupUI() {
+        // Mobile detection
+        this.checkMobile();
+        window.addEventListener('resize', () => this.checkMobile());
+
         // Populate surah selector
         const select = this.$('surah-select');
         this.surahList.forEach(s => {
@@ -171,6 +183,39 @@ const App = {
 
         // Close panel
         this.$('close-panel').addEventListener('click', () => this.closePanel());
+
+        // Backdrop click to dismiss
+        this.$('panel-backdrop').addEventListener('click', () => this.closePanel());
+
+        // ── Swipe-to-dismiss (mobile bottom drawer) ──
+        const panel = this.$('root-panel');
+
+        panel.addEventListener('touchstart', (e) => {
+            if (!this.isMobile) return;
+            const target = e.target.closest('.drawer-handle, .panel-header');
+            if (!target) return;
+            this._drawerDrag = { startY: e.touches[0].clientY, currentY: e.touches[0].clientY };
+            panel.style.transition = 'none';
+        }, { passive: true });
+
+        panel.addEventListener('touchmove', (e) => {
+            if (!this._drawerDrag) return;
+            this._drawerDrag.currentY = e.touches[0].clientY;
+            const dy = Math.max(0, this._drawerDrag.currentY - this._drawerDrag.startY);
+            panel.style.transform = `translateY(${dy}px)`;
+        }, { passive: true });
+
+        panel.addEventListener('touchend', () => {
+            if (!this._drawerDrag) return;
+            const dy = this._drawerDrag.currentY - this._drawerDrag.startY;
+            this._drawerDrag = null;
+            panel.style.transition = '';
+            if (dy > 100) {
+                this.closePanel();
+            } else {
+                panel.style.transform = 'translateY(0)';
+            }
+        }, { passive: true });
 
         // Show more button
         this.$('show-more-btn').addEventListener('click', () => {
@@ -537,6 +582,7 @@ const App = {
         const letters = root.split('');
         this.$('root-display').textContent = letters.join(' ');
         this.$('root-buckwalter').textContent = data.b || '';
+        this.$('root-gloss').textContent = this.extractGloss(data.m || '');
         this.$('root-meaning').textContent = data.m || 'No meaning available';
         this.$('root-meaning').style.display = data.m ? 'block' : 'none';
         this.$('root-frequency').textContent = `Appears in ${data.f} verses across the Quran`;
@@ -577,6 +623,14 @@ const App = {
         // Show panel
         panel.classList.add('panel-visible');
         document.body.classList.add('panel-open');
+
+        // Mobile: show backdrop + lock body scroll
+        if (this.isMobile) {
+            const backdrop = this.$('panel-backdrop');
+            backdrop.style.display = 'block';
+            requestAnimationFrame(() => backdrop.classList.add('visible'));
+            document.body.style.overflow = 'hidden';
+        }
     },
 
     renderRevelation(data) {
@@ -734,8 +788,17 @@ const App = {
     },
 
     closePanel() {
-        this.$('root-panel').classList.remove('panel-visible');
+        const panel = this.$('root-panel');
+        panel.classList.remove('panel-visible');
+        panel.style.transform = '';
+        panel.style.transition = '';
         document.body.classList.remove('panel-open');
+
+        // Hide backdrop + unlock body scroll
+        const backdrop = this.$('panel-backdrop');
+        backdrop.classList.remove('visible');
+        setTimeout(() => { backdrop.style.display = 'none'; }, 300);
+        document.body.style.overflow = '';
 
         // Clear highlights
         document.querySelectorAll('.word-selected, .word-highlighted').forEach(el => {
@@ -1500,6 +1563,34 @@ const App = {
             el.style.background = 'var(--gold-light)';
             setTimeout(() => { el.style.background = ''; }, 1500);
         }
+    },
+
+    extractGloss(meaning) {
+        if (!meaning) return '';
+        // Try to extract short gloss from meaning patterns:
+        // "means to X" / "means \"X\"" / "primarily means X" / "centers on X"
+        let m = meaning.replace(/\s+/g, ' ');
+        const patterns = [
+            /primarily means[:\s]+"([^"]+)"/i,
+            /primarily means[:\s]+to ([^.,;]+)/i,
+            /primarily means[:\s]+([^.]+)/i,
+            /means[:\s]+"([^"]+)"/i,
+            /means[:\s]+to ([^.,;]+)/i,
+            /centers on ([^.]+)/i,
+            /signifies ([^.]+)/i,
+        ];
+        for (const pat of patterns) {
+            const match = m.match(pat);
+            if (match) {
+                let gloss = match[1].trim().replace(/["""]/g, '');
+                if (gloss.length > 60) gloss = gloss.substring(0, 57) + '…';
+                return gloss;
+            }
+        }
+        // Fallback: first sentence, truncated
+        const first = m.split(/[.!]/)[0];
+        if (first.length > 60) return first.substring(0, 57) + '…';
+        return first;
     },
 };
 
