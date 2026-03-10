@@ -321,6 +321,7 @@ const App = {
     },
 
     handleHash() {
+        if (this._navigating) return;
         const hash = location.hash.slice(1);
         if (!hash) {
             this.loadSurah(1);
@@ -329,14 +330,14 @@ const App = {
         const parts = hash.split(':');
         const surah = parseInt(parts[0]);
         if (surah >= 1 && surah <= 114) {
-            this.loadSurah(surah, true).then(() => {
+            this.loadSurah(surah, true, !!parts[1]).then(() => {
                 if (parts[1]) this.scrollToVerse(`${surah}:${parts[1]}`);
             });
         }
     },
 
     // ── Data Loading ───────────────────────────────
-    async loadSurah(num, skipHash) {
+    async loadSurah(num, skipHash, skipScroll) {
         if (!this.surahCache[num]) {
             const resp = await fetch(`data/surahs/${num}.json`);
             this.surahCache[num] = await resp.json();
@@ -361,7 +362,7 @@ const App = {
         const themesLink = document.querySelector('.themes-link');
         if (themesLink) themesLink.href = `themes.html?surah=${num}`;
 
-        window.scrollTo(0, 0);
+        if (!skipScroll) window.scrollTo(0, 0);
     },
 
     // ── Rendering ──────────────────────────────────
@@ -1474,8 +1475,15 @@ const App = {
     // ── Navigation ─────────────────────────────────
     async navigateToVerse(verseKey) {
         const [surah, ayah] = verseKey.split(':').map(Number);
-        await this.loadSurah(surah);
-        this.scrollToVerse(verseKey);
+        const crossSurah = surah !== this.currentSurah;
+        this._navigating = true;
+        await this.loadSurah(surah, true, true);
+        location.hash = verseKey;
+
+        // Wait for browser layout after large DOM render before scrolling
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        this.scrollToVerse(verseKey, crossSurah);
+        this._navigating = false;
 
         // Re-highlight current root in new surah
         if (this.selectedRoot) {
@@ -1483,10 +1491,10 @@ const App = {
         }
     },
 
-    scrollToVerse(verseKey) {
+    scrollToVerse(verseKey, instant) {
         const el = document.getElementById(`v-${verseKey}`);
         if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.scrollIntoView({ behavior: instant ? 'instant' : 'smooth', block: 'center' });
             // Flash effect
             el.style.transition = 'background 0.3s';
             el.style.background = 'var(--gold-light)';

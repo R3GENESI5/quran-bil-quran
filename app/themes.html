@@ -364,9 +364,10 @@ header {
     const verseFams = {};
     for (const [root, data] of Object.entries(rootsIndex)) {
         if (!data.fam || !data.fam.length) continue;
+        const fams = Array.isArray(data.fam) ? data.fam : [data.fam];
         for (const vk of data.v) {
             if (!verseFams[vk]) verseFams[vk] = new Set();
-            for (const f of data.fam) {
+            for (const f of fams) {
                 if (families[f]) verseFams[vk].add(f);
             }
         }
@@ -402,7 +403,8 @@ header {
         const prefix = surahNum ? `${surahNum}:` : null;
         for (const [root, data] of Object.entries(rootsIndex)) {
             if (!data.fam) continue;
-            for (const f of data.fam) {
+            const fams = Array.isArray(data.fam) ? data.fam : [data.fam];
+            for (const f of fams) {
                 if (!map[f]) continue;
                 for (const vk of data.v) {
                     if (!prefix || vk.startsWith(prefix)) map[f].add(vk);
