@@ -1364,26 +1364,58 @@ body {
 
 /* ── Mobile: Bottom Drawer ─────────────────────── */
 @media (max-width: 768px) {
+    /* Header wraps to two rows on tablet/phone */
+    #header {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: var(--header-h);
+        gap: 4px;
+        padding: 6px 12px;
+    }
+    .header-right { order: 1; }
+    .header-center { order: 2; flex: 1 1 auto; justify-content: flex-end; }
+    .header-left {
+        order: 3;
+        flex: 1 0 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 4px;
+        border-top: 1px solid var(--border);
+    }
+
     #root-panel {
-        top: auto;
+        top: 0;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
-        height: 70vh;
-        max-height: 70vh;
+        height: 100vh;
+        max-height: 100vh;
         border-right: none;
-        border-top: 1px solid var(--border);
-        border-radius: 16px 16px 0 0;
+        border-top: none;
+        border-radius: 0;
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 60;
+        z-index: 200;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
     #root-panel.panel-visible {
         transform: translateY(0);
     }
     .panel-open #main {
         margin-left: 0;
+    }
+
+    /* Make panel close button prominent on mobile */
+    .panel-close {
+        width: 44px;
+        height: 44px;
+        font-size: 1.4rem;
+        position: sticky;
+        top: 0;
+        z-index: 210;
     }
 
     /* Drawer drag handle */
@@ -1445,10 +1477,67 @@ body {
 
 /* Small phones */
 @media (max-width: 500px) {
-    #header { padding: 0 12px; }
+    #header {
+        padding: 0 8px;
+        flex-wrap: wrap;
+        height: auto;
+        min-height: var(--header-h);
+        gap: 4px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    /* Logo row: logo + surah nav share full width */
+    .header-right { order: 1; flex: 0 0 auto; }
+    .header-center { order: 2; flex: 1 1 auto; justify-content: flex-end; }
+    .header-left {
+        order: 3;
+        flex: 1 0 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 4px;
+        border-top: 1px solid var(--border);
+    }
+
+    .logo { font-size: 1rem; }
+    #surah-select { min-width: 100px; font-size: 0.85rem; padding: 4px 24px 4px 8px; }
+
+    /* Compact toolbar buttons */
+    .theme-toggle-btn,
+    .trans-toggle-btn,
+    .nav-btn,
+    #root-search-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        font-size: 0.95rem;
+    }
+
+    .root-search-input { width: 120px !important; font-size: 0.85rem; }
+    .root-search-results { width: 90vw; left: 5vw; right: 5vw; }
+
+    /* Verses */
     .verse-num { width: 24px; height: 24px; font-size: 0.6rem; }
     .verse-text { font-size: calc(1.2rem * var(--text-scale, 1)); line-height: 2.1; }
+
+    /* Panel */
     .root-arabic { font-size: 2.2rem; }
     .tafsir-inner { padding: 12px 14px; }
     .tafsir-text { font-size: calc(1.05rem * var(--text-scale, 1)); line-height: 1.9; }
+
+    /* Reader padding */
+    #reader { padding: 12px 3% 60px; }
+}
+
+/* Very small phones (iPhone SE, etc.) */
+@media (max-width: 380px) {
+    .logo { font-size: 0.9rem; }
+    #surah-select { min-width: 80px; font-size: 0.8rem; }
+    .verse-text { font-size: calc(1.1rem * var(--text-scale, 1)); }
+    .header-left { gap: 4px; }
+    .theme-toggle-btn, .trans-toggle-btn, .nav-btn, #root-search-btn {
+        width: 34px; height: 34px; min-width: 34px; min-height: 34px;
+    }
 }

@@ -1,8 +1,94 @@
 # القرآن بالقرآن — Quran bil-Quran
 
-A digital Mufharis (concordance) that lets the Quran explain itself. Click any word to discover every other verse sharing the same trilateral Arabic root — then trace how roots cluster into 35 semantic families, read classical tafsir from 11 scholars in 3 languages, and explore a force-directed thematic map.
+**Let the Quran explain itself.**
+
+A digital Mufharis (concordance) that connects every word in the Quran to every other verse sharing its trilateral Arabic root. Where a traditional printed concordance gives you a flat alphabetical list, this tool goes further — it groups 1,651 roots into 37 semantic families, computes thematic fingerprints per surah, surfaces classical lexicography inline, and visualizes the entire root-family network as an interactive graph.
 
 **[Live App →](https://r3genesi5.github.io/quran-bil-quran/)** · **[Dataset on HuggingFace](https://huggingface.co/datasets/iqrossed/quran-bil-quran)**
+
+---
+
+## Why a Concordance Matters
+
+The Quran's primary method of self-commentary is repetition with variation. The root ر ح م (*rahima*) appears in 339 verses — as "mercy" (رحمة), "the Most Merciful" (الرحيم), "the womb" (رحم), and more. A concordance surfaces these connections instantly: click any word, and every verse sharing that root appears, grouped by surah. You see the Quran's own internal cross-references without relying on any external commentary.
+
+This is the classical principle of **تفسير القرآن بالقرآن** — interpreting the Quran by the Quran — made navigable.
+
+---
+
+## What Are Semantic Families?
+
+Arabic is built on trilateral roots. Roots that share a conceptual field — like خلق (create), برأ (originate), فطر (bring into being), صور (form) — belong to the same **semantic family** (here: "Creation"). This project defines 37 such families, curated from classical Arabic lexicography (Lane's Lexicon, Maqayis al-Lugha).
+
+### Why families are useful
+
+- **Thematic fingerprinting**: Each surah gets a computed profile — Al-Baqarah is 73% Theology with distinctive spikes in Purity and Trade; Ar-Rahman is 85% Nature. This is pure computation from the root graph, no AI involved
+- **Cross-referencing by theme**: When you click a root, you see not just its own verses but its entire family — related roots, co-occurring roots, and how often they appear together
+- **Visualizing structure**: The themes page renders all 37 families as a force-directed graph where edge thickness encodes co-occurrence strength. You can see, at a glance, that Guidance and Revelation are tightly coupled while Animals and Trade rarely overlap
+
+The 37 families are grouped into 6 macro-groups: Theology, Ethics, Eschatology, Nature, Human, and Society.
+
+---
+
+## Versions
+
+| Version | URL | Status |
+|---------|-----|--------|
+| **v1.1** (current) | [r3genesi5.github.io/quran-bil-quran](https://r3genesi5.github.io/quran-bil-quran/) | Mobile-compatible layout, full feature set, actively maintained |
+| **v1.0** | Same URL (previous deploy) | Desktop-optimized, header overflows on mobile screens |
+| **Legacy** | [quran-bil-quran.netlify.app](https://quran-bil-quran.netlify.app) | Early version — basic reader without tafsir, search, themes, or classical lexicography |
+
+---
+
+## Features at a Glance
+
+| Feature | Description |
+|---------|-------------|
+| **Root concordance** | Click any word → see its trilateral root, meaning, and every verse containing it |
+| **Classical lexicography** | Raghib al-Isfahani's *Mufradat* (root definitions) + Abu Hilal al-Askari's *Furuq* (synonym distinctions) |
+| **11 tafsir sources** | 7 Arabic, 2 Urdu, 2 English — inline expandable under each verse |
+| **English translation** | Sahih International, toggleable per verse |
+| **Word-by-word meanings** | Hover any word for its individual English meaning |
+| **Transliteration** | Latin romanization, toggleable |
+| **Semantic families** | 37 families across 6 macro-groups with per-surah thematic insights |
+| **Co-occurrence analysis** | See which roots most frequently appear alongside a given root |
+| **Thematic map** | D3.js force-directed edge bundling diagram of all 37 families |
+| **Root search** | Find roots by Arabic, English, or Buckwalter transliteration |
+| **Furuq search** | Browse linguistic distinctions between near-synonyms |
+| **Dark mode** | Full dark theme, persisted across sessions |
+| **Text scaling** | 4 zoom levels for Arabic text |
+| **Collapsible panels** | Accordion sections for organized root information |
+| **Mobile layout** | Responsive header, full-screen root panel, tuned breakpoints for phones |
+
+---
+
+## Offline Use
+
+The app is a static site — HTML, CSS, JS, and JSON files. Once loaded (or cloned), most features work without internet:
+
+**Works offline:**
+- Full Quran text (Arabic) — all 114 surahs
+- Root concordance — all 1,651 roots with meanings and verse lists
+- Semantic families, thematic dots, and surah insights
+- Mufradat and Furuq classical lexicography
+- English translation and word-by-word meanings (pre-downloaded)
+- Transliteration (pre-downloaded)
+- Urdu tafsirs: Bayan ul-Quran and Ibn Kathir Urdu (pre-downloaded)
+- Thematic map (themes.html)
+- Dark mode, text scaling, search
+
+**Requires internet:**
+- Arabic tafsirs (7 sources — fetched live from quran.com API)
+- English tafsirs (2 sources — fetched live from quran.com API)
+- Google Fonts (Amiri) — falls back to system serif if unavailable
+
+To run locally:
+```bash
+cd app && python -m http.server 8080
+# Open http://localhost:8080
+```
+
+Or simply open `app/index.html` in a browser — the only limitation is that `fetch()` for JSON files requires a server (browsers block local file `fetch` due to CORS). Any static file server works.
 
 ---
 
@@ -10,21 +96,59 @@ A digital Mufharis (concordance) that lets the Quran explain itself. Click any w
 
 ### Reader (index.html)
 
-1. **Read** — Browse all 114 surahs with full Uthmani Arabic text. Toggle Sahih International English translation, word-by-word hover meanings, or Latin transliteration. Adjust text scale (4 levels) and switch between light/dark mode
-2. **Click any word** — A side panel reveals the word's trilateral root, its Lane's Lexicon meaning, Raghib al-Isfahani's classical definition (*Mufradat*), synonym distinctions (*Furuq*), semantic family membership, co-occurring roots, and every verse sharing that root
-3. **Search roots** — The ⊕ search bar finds roots by Arabic letters, English meaning, or Buckwalter transliteration. Switch between **Roots** mode (1,651 entries) and **Furuq** mode (synonym distinctions)
-4. **See the themes** — Colored dots under each verse show which of 6 macro-groups are present. A collapsible bar under each surah title shows the top semantic families and a computed insight with the dominant thematic register and distinctive families
-5. **Read tafsir** — Click any verse number to expand inline tafsir. 11 tafsir sources available: 7 Arabic (API), 2 Urdu (pre-downloaded), 2 English (API) — switchable via dropdown
+1. **Read** — Browse all 114 surahs with full Uthmani Arabic text. Toggle English translation, word-by-word hover meanings, or Latin transliteration. Adjust text scale (4 levels) and switch light/dark mode
+2. **Click any word** — A panel reveals the word's trilateral root, its Lane's Lexicon meaning, Raghib al-Isfahani's classical definition (*Mufradat*), synonym distinctions (*Furuq*), semantic family membership, co-occurring roots, and every verse sharing that root
+3. **Search roots** — The search bar finds roots by Arabic letters, English meaning, or Buckwalter transliteration. Switch between **Roots** mode (1,651 entries) and **Furuq** mode (synonym distinctions)
+4. **See the themes** — Colored dots under each verse show which of 6 macro-groups are present. A bar under each surah title shows the top semantic families and a computed thematic insight
+5. **Read tafsir** — Click any verse number to expand inline tafsir. 11 sources across 3 languages, switchable via dropdown
 
 ### Thematic Map (themes.html)
 
-A D3.js force-directed edge bundling (FDEB) diagram visualizing how the 35 semantic families connect:
+A D3.js force-directed edge bundling (FDEB) diagram visualizing how the 37 semantic families connect:
 
 - **Chord layout** — families arranged in a circle, edges encode co-occurrence strength
 - **Bundling slider** — adjust edge attraction to reveal natural thematic clusters
+- **Label size slider** — adjust node label readability
 - **Per-surah filter** — see how family connections shift across individual surahs
 - **Click-to-lock** — click a node to isolate its connections; click a connection in the detail panel to focus on a specific edge pair
-- **Thematic summary** — auto-generated dominant register and strongest bridges for the selected surah
+- **Pan and zoom** — pinch or scroll to zoom, drag to pan
+
+---
+
+## Thematic Inference Pipeline
+
+No LLM is used. All thematic analysis is pure computation from the root-family graph:
+
+### Step 1: Build verse → family map
+Each of the 1,651 roots belongs to one of 37 semantic families (via `fam` field in `roots_index.json`). At init, `buildVerseFamilies()` iterates every root, and for each verse that root appears in, adds its family to that verse's family set. Result: **6,214 of 6,236 verses (99.6%)** have at least one themed root.
+
+### Step 2: Aggregate into 6 macro-groups
+The 37 families are mapped to 6 macro-groups:
+
+| Group | Arabic | Families |
+|-------|--------|----------|
+| **Theology** | الإلهيات | creation, knowledge, guidance, revelation, prophets, covenant, divine_names, lordship |
+| **Ethics** | الأخلاق | patience, gratitude, repentance, righteousness, corruption, justice, charity |
+| **Eschatology** | الآخرة | afterlife, reward_punishment, time, end_of_times |
+| **Nature** | الطبيعة | earth_sky, water_rain, light_dark, animals |
+| **Human** | الإنسان | body, speech, emotion, seeing_hearing, provision |
+| **Society** | المجتمع | community, warfare, jihad, family, trade, authority, travel |
+
+### Step 3: Compute per-surah insight
+For each surah, `renderSurahInsight()`:
+1. Counts **unique verses** per macro-group (using Sets to avoid double-counting)
+2. Identifies the **dominant group** (highest verse coverage percentage)
+3. Computes **distinctiveness** for each family: `surah_rate / quran_wide_rate`. Families with ratio > 1.5x and >= 3 occurrences are surfaced as "distinctive"
+
+Example output for Al-Baqarah:
+> **Primary register: Theology** — 73% of verses
+> Distinctive: Purity (x3.6) · Trade (x3.1) · Animals (x2.4)
+
+### Step 4: Per-verse thematic dots
+Each verse gets colored dots (max 6) representing which macro-groups are present. One dot per group, auto-adapted to dark mode.
+
+### Step 5: FDEB visualization (themes.html)
+A D3.js force-directed edge bundling diagram arranges all 37 families in a circle. Edge thickness encodes co-occurrence strength. Bundling is controlled by a slider — edges attract toward nearby nodes, revealing natural clusters.
 
 ---
 
@@ -34,122 +158,53 @@ A D3.js force-directed edge bundling (FDEB) diagram visualizing how the 35 seman
 
 | File | Size | Description |
 |------|------|-------------|
-| `roots_index.json` | 740 KB | **1,651 roots** — Buckwalter transliteration, Lane's Lexicon meaning, frequency, verse list, and semantic family assignment |
-| `families.json` | 28 KB | **35 semantic families** — groups of synonymous/related roots (e.g., خلق/برأ/فطر/صور = "creation"), with Arabic name and English meaning |
-| `verses_text.json` | 1.4 MB | **6,236 verses** — full Uthmani Arabic text, keyed `"surah:ayah"` |
-| `surah_list.json` | 17 KB | **114 surahs** — number, Arabic/English names, verse count, revelation type |
-| `mufradat.json` | 787 KB | **Mufradat al-Quran** — classical vocabulary entries (Raghib al-Isfahani), root explanations and cited verses |
-| `furuq.json` | 449 KB | **Furuq Lughawiyyah** — linguistic distinctions between near-synonym roots (e.g., خشية vs خوف) |
+| `roots_index.json` | 740 KB | **1,651 roots** — Buckwalter transliteration, Lane's Lexicon meaning, frequency, verse list, semantic family |
+| `families.json` | 28 KB | **37 semantic families** — groups of related roots with Arabic name and English meaning |
+| `verses_text.json` | 1.4 MB | **6,236 verses** — full Uthmani Arabic text |
+| `surah_list.json` | 17 KB | **114 surahs** — metadata (name, verse count, revelation type) |
+| `mufradat.json` | 787 KB | **Mufradat al-Quran** — classical vocabulary (Raghib al-Isfahani) |
+| `furuq.json` | 449 KB | **Furuq Lughawiyyah** — synonym distinctions (Abu Hilal al-Askari) |
+| `surahs/` | 114 JSON | Word-level morphology per surah |
 
-### Per-Surah Morphology
+### Translations and Tafsir
 
-| Directory | Files | Description |
-|-----------|-------|-------------|
-| `surahs/` | 114 JSON | Word-level morphology per surah — each word has Arabic text (`t`), verse key (`v`), and root (`r`) |
+| File | Description |
+|------|-------------|
+| `translations/en.sahih.json` | Sahih International English (6,236 verses) |
+| `translations/wbw.en.json` | Word-by-word English meanings |
+| `translations/transliteration.json` | Latin transliteration (6,236 verses) |
+| `tafsirs/bayan-ul-quran/` | Bayan ul-Quran (Urdu, offline) |
+| `tafsirs/ibn-kathir-ur/` | Ibn Kathir Urdu (offline) |
 
-### Translation Data
-
-| File | Size | Description |
-|------|------|-------------|
-| `translations/en.sahih.json` | 925 KB | **Sahih International** English — 6,236 verse-level translations, keyed `"1:1": "text…"` |
-| `translations/wbw.en.json` | 1.1 MB | **Word-by-word** English — per-word meanings keyed `"1:1": ["In (the) name", "of Allah", …]` |
-| `translations/transliteration.json` | 1.0 MB | **Latin transliteration** — 6,236 verse-level romanized text |
-
-### Pre-downloaded Tafsir
-
-| Directory | Surah files | Size | Description |
-|-----------|-------------|------|-------------|
-| `tafsirs/bayan-ul-quran/` | 114 | 8.2 MB | **Bayan ul-Quran** — Urdu tafsir, verse-keyed HTML |
-| `tafsirs/ibn-kathir-ur/` | 114 | 19 MB | **Ibn Kathir (Urdu)** — Urdu translation of the classical tafsir |
-
-### HuggingFace Dataset (JSONL format for research)
+### HuggingFace Dataset
 
 | Layer | File | Records |
 |-------|------|---------|
 | Root Graph | `roots.jsonl` | 1,651 roots with occurrences and Lane's Lexicon meanings |
-| Semantic Families | `families.jsonl` | 35 families grouping synonymous roots |
-| Convergence Map | `convergence.jsonl` | 6,214 verses mapped to their roots and families |
+| Semantic Families | `families.jsonl` | 37 families grouping synonymous roots |
+| Convergence Map | `convergence.jsonl` | 6,214 verses mapped to roots and families |
 
 ---
 
-## Thematic Inference Pipeline
+## Tafsir Sources
 
-No LLM is used. All thematic analysis is pure computation from the root-family graph:
+Click any verse number to expand inline tafsir. 11 sources across 3 languages:
 
-### Step 1: Build verse → family map
-Each of the 1,651 roots belongs to one of 35 semantic families (via `fam` field in `roots_index.json`). At init, `buildVerseFamilies()` iterates every root, and for each verse that root appears in, adds its family to that verse's family set. Result: **6,214 of 6,236 verses (99.6%)** have at least one themed root.
+| Language | Sources | Delivery |
+|----------|---------|----------|
+| **Arabic** (7) | Muyassar, Ibn Kathir, Al-Sa'di, Al-Baghawi, Al-Tabari, Al-Qurtubi, Tantawi | Live API |
+| **Urdu** (2) | Bayan ul-Quran, Ibn Kathir Urdu | Pre-downloaded (offline) |
+| **English** (2) | Ibn Kathir English, Ma'ariful Qur'an | Live API |
 
-### Step 2: Aggregate into 6 macro-groups
-The 35 families are mapped to 6 macro-groups:
-
-| Group | Arabic | Families |
-|-------|--------|----------|
-| **Theology** | الإلهيات | creation, knowledge, guidance, revelation, prophets, covenant, divine_names, lordship |
-| **Ethics** | الأخلاق | patience, gratitude, repentance, righteousness, corruption, justice, charity |
-| **Eschatology** | الآخرة | afterlife, reward_punishment, time |
-| **Nature** | الطبيعة | earth_sky, water_rain, light_dark, animals |
-| **Human** | الإنسان | body, speech, emotion, seeing_hearing, provision |
-| **Society** | المجتمع | community, warfare, family, trade, authority, travel |
-
-### Step 3: Compute per-surah insight
-For each surah, `renderSurahInsight()`:
-1. Counts **unique verses** per macro-group (using Sets to avoid double-counting when a verse has multiple families in the same group)
-2. Identifies the **dominant group** (highest verse coverage percentage)
-3. Computes **distinctiveness** for each family: `surah_rate / quran_wide_rate`. Families with ratio > 1.5× and ≥ 3 occurrences are surfaced as "distinctive"
-
-Example output for Al-Baqarah:
-> **السمة الغالبة: الإلهيات** — Primary register: Theology — 73% of verses
-> المميّز: الطهارة والتزكية (×3.6) · المال والتجارة (×3.1) · الحيوان والدواب (×2.4)
-
-### Step 4: Per-verse thematic dots
-Each verse gets colored dots (max 6) representing which macro-groups are present. One dot per group, using CSS custom properties `--group-0` through `--group-5` that auto-adapt to dark mode.
-
-### Step 5: FDEB visualization (themes.html)
-A D3.js force-directed edge bundling diagram arranges all 35 families in a circle. Edge thickness encodes co-occurrence strength (how many verses share both families). Bundling is controlled by a slider — edges attract toward nearby nodes, revealing natural clusters. Click-to-lock interaction lets you isolate a single family's connections or a specific edge pair.
-
----
-
-## Tafsir
-
-Click any verse number (①②③…) to expand an inline tafsir block. 11 sources available across 3 languages, switchable via dropdown:
-
-### Arabic (live from quran.com API)
-
-| ID | Name | Author |
-|----|------|--------|
-| 16 | **التفسير الميسّر** (default) | Muyassar — concise modern Arabic |
-| 14 | **ابن كثير** | Ibn Kathir (d. 1373) — classical hadith-based |
-| 91 | **السعدي** | Al-Sa'di (d. 1956) — concise classical |
-| 94 | **البغوي** | Al-Baghawi (d. 1122) — traditional |
-| 15 | **الطبري** | Al-Tabari (d. 923) — foundational classical |
-| 90 | **القرطبي** | Al-Qurtubi (d. 1273) — jurisprudence-focused |
-| 93 | **الوسيط — الطنطاوي** | Tantawi — modern comprehensive |
-
-### Urdu (pre-downloaded, offline)
-
-| Directory | Name |
-|-----------|------|
-| `bayan-ul-quran` | **بیان القرآن** — Ashraf Ali Thanawi |
-| `ibn-kathir-ur` | **ابن کثیر اردو** — Urdu translation of Ibn Kathir |
-
-### English (live from quran.com API)
-
-| ID | Name |
-|----|------|
-| 169 | **Ibn Kathir (English)** |
-| 168 | **Ma'ariful Qur'an** |
-
-Tafsir responses are cached client-side per `tafsirId:verseKey` to minimize API calls. Pre-downloaded tafsirs load instantly from static JSON.
+Responses are cached client-side to minimize API calls.
 
 ---
 
 ## Classical Lexicography
 
-Two classical Arabic sources power the root-click panel:
+**Mufradat al-Quran** — Raghib al-Isfahani (d. ~1108). Classical vocabulary of Quranic Arabic. Each root entry shows core meaning, semantic range, and cited verses.
 
-**Mufradat al-Quran (المفردات في غريب القرآن)** — Raghib al-Isfahani's (d. ~1108) vocabulary of Quranic Arabic. When a root is clicked, its Mufradat entry shows the root's core meaning, semantic range, and cited Quranic verses.
-
-**Furuq Lughawiyyah (الفروق اللغوية)** — Abu Hilal al-Askari's (d. ~1005) treatise on near-synonym distinctions. When a clicked root has known synonyms (e.g., خشية/خوف — "fear"), the Furuq panel explains the precise semantic difference between them. The search bar's Furuq mode lets you browse all distinction entries directly.
+**Furuq Lughawiyyah** — Abu Hilal al-Askari (d. ~1005). Treatise on near-synonym distinctions (e.g., خشية vs خوف — both mean "fear," but خشية implies awe before greatness while خوف implies apprehension of harm).
 
 ---
 
@@ -159,7 +214,7 @@ Two classical Arabic sources power the root-click panel:
 src/
   quran_loader.py          # Downloads Quran text + morphology from APIs
   root_graph.py            # Builds root → verse index (digital Mufharis)
-  root_families.py         # 35 semantic root families
+  root_families.py         # 37 semantic root families
   build_dataset.py         # Main pipeline: roots/families/convergence JSONL
   export_for_web.py        # Converts dataset to optimized JSON for web app
   download_translations.py # Fetches Sahih International + WBW from quran.com
@@ -173,41 +228,26 @@ app/                       # Static web app (GitHub Pages)
   js/app.js                # Reader logic, thematic computation, translation
   data/
     roots_index.json       # Root glossary (1,651 roots)
-    families.json          # 35 semantic families
+    families.json          # 37 semantic families
     verses_text.json       # Full Quran text (Uthmani)
     surah_list.json        # 114 surah metadata
     mufradat.json          # Classical vocabulary (Raghib)
     furuq.json             # Synonym distinctions (Abu Hilal)
     surahs/                # Per-surah JSON (word-level morphology)
     tafsirs/               # Pre-downloaded Urdu tafsirs
-    translations/
-      en.sahih.json        # Sahih International English
-      wbw.en.json          # Word-by-word English
-      transliteration.json # Latin transliteration
-
-hf_dataset/                # HuggingFace dataset card
-  README.md
+    translations/          # English, WBW, transliteration
 ```
 
 ## Build
 
 ```bash
-# Install dependencies
 pip install requests tqdm huggingface_hub
 
-# Build dataset from APIs (downloads on first run)
-python src/build_dataset.py
+python src/build_dataset.py         # Build root dataset from APIs
+python src/export_for_web.py        # Export JSON for web app
+python src/download_translations.py # Download English translations
+python src/tafsir_fetcher.py        # Download Urdu tafsirs
 
-# Export optimized JSON for web app
-python src/export_for_web.py
-
-# Download English translations (one-time)
-python src/download_translations.py
-
-# Download Urdu tafsirs (one-time)
-python src/tafsir_fetcher.py
-
-# Serve locally
 cd app && python -m http.server 8080
 ```
 
@@ -216,7 +256,7 @@ cd app && python -m http.server 8080
 - **1,651** unique trilateral roots (all with Lane's Lexicon meanings)
 - **6,236** verses with full Arabic text
 - **44,718** total root-verse occurrences
-- **35** semantic families across **6** macro-groups
+- **37** semantic families across **6** macro-groups
 - **6,214** verses (99.6%) with at least one themed root
 - **11** tafsir sources in 3 languages (Arabic, Urdu, English)
 
@@ -228,10 +268,8 @@ cd app && python -m http.server 8080
 - **Semantic families**: Curated from classical Arabic lexicography (Lane's Lexicon, Maqayis al-Lugha)
 - **Mufradat**: Raghib al-Isfahani, *al-Mufradat fi Gharib al-Quran*
 - **Furuq**: Abu Hilal al-Askari, *al-Furuq al-Lughawiyyah*
-- **Tafsir (Arabic)**: Live from [quran.com API](https://api.quran.com/api/v4) (7 classical scholars)
-- **Tafsir (Urdu)**: Pre-downloaded from quran.com API (Bayan ul-Quran, Ibn Kathir Urdu)
-- **Tafsir (English)**: Live from quran.com API (Ibn Kathir English, Ma'ariful Qur'an)
-- **Translation**: Sahih International + word-by-word via quran.com API (pre-downloaded)
+- **Tafsir**: [quran.com API](https://api.quran.com/api/v4) + pre-downloaded archives
+- **Translation**: Sahih International + word-by-word via quran.com API
 
 ## License
 
