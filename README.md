@@ -102,33 +102,91 @@ The 37 families are grouped into 6 macro-groups: Theology, Ethics, Eschatology, 
 
 ---
 
-## Offline Use
+## Run It Yourself
 
-The app is a static site — HTML, CSS, JS, and JSON files. Once loaded (or cloned), most features work without internet:
+The entire app is static files — HTML, CSS, JS, and JSON. No database, no backend, no build step. You can run it on your PC, your phone, or even a USB stick. The only requirement is Python 3 (for a local file server) or any static file server.
 
-**Works offline:**
-- Full Quran text (Arabic) — all 114 surahs
-- Root concordance — all 1,651 roots with meanings and verse lists
-- Semantic families, thematic dots, and surah insights
-- Mufradat and Furuq classical lexicography
-- English translation and word-by-word meanings (pre-downloaded)
-- Transliteration (pre-downloaded)
-- Urdu tafsirs: Bayan ul-Quran and Ibn Kathir Urdu (pre-downloaded)
-- Thematic map (themes.html)
-- Dark mode, text scaling, search
+### Quick start
 
-**Requires internet:**
-- Arabic tafsirs (7 sources — fetched live from quran.com API)
-- English tafsirs (2 sources — fetched live from quran.com API)
-- Google Fonts (Amiri) — falls back to system serif if unavailable
-
-To run locally:
-```bash
-cd app && python -m http.server 8080
-# Open http://localhost:8080
+**Windows:**
+```
+git clone https://github.com/R3GENESI5/quran-bil-quran.git
+cd quran-bil-quran
+start.bat
 ```
 
-Or simply open `app/index.html` in a browser — the only limitation is that `fetch()` for JSON files requires a server (browsers block local file `fetch` due to CORS). Any static file server works.
+**Mac / Linux:**
+```bash
+git clone https://github.com/R3GENESI5/quran-bil-quran.git
+cd quran-bil-quran
+./start.sh
+```
+
+The launcher script starts a local server, opens your browser, and prints a URL for phone access on the same Wi-Fi network.
+
+### Access from your phone
+
+When the server starts, it prints two URLs:
+
+```
+  Local:   http://localhost:8080
+  Phone:   http://192.168.1.x:8080
+```
+
+Open the **Phone** URL in your mobile browser (your PC and phone must be on the same Wi-Fi). Bookmark it for quick access. The app works exactly like the live site — same features, same data, fully offline after first load.
+
+### Fork and customize
+
+1. **Fork** the repo on GitHub → you get your own copy at `github.com/YOUR_NAME/quran-bil-quran`
+2. **Enable GitHub Pages**: Settings → Pages → Source: "Deploy from a branch" → Branch: `master`, folder: `/app`
+3. Your live site appears at `YOUR_NAME.github.io/quran-bil-quran` within a minute
+
+To customize:
+- Edit `app/data/families.json` to add, rename, or restructure semantic families
+- Edit `app/data/roots_index.json` to adjust which family a root belongs to (the `fam` field)
+- The thematic map, surah insights, and convergence dots will all recompute automatically — they are derived from the root-family graph at load time
+
+### Other ways to serve
+
+Any static file server works. You do not need Python specifically:
+
+```bash
+# Node.js
+npx serve app
+
+# PHP
+php -S localhost:8080 -t app
+
+# Ruby
+ruby -run -e httpd app -p 8080
+
+# Or just drag app/index.html into your browser
+# (works for reading, but fetch() for JSON files may be blocked by CORS)
+```
+
+### What works offline
+
+Once cloned or downloaded, almost everything works without internet:
+
+| Feature | Offline? | Notes |
+|---------|----------|-------|
+| Full Quran text (Arabic) | Yes | All 114 surahs, pre-downloaded |
+| Root concordance (1,651 roots) | Yes | All meanings, verse lists, families |
+| Semantic families + thematic insights | Yes | Computed from local data |
+| Mufradat (classical definitions) | Yes | Pre-downloaded |
+| Furuq (synonym distinctions) | Yes | Pre-downloaded |
+| English translation | Yes | Pre-downloaded (Sahih International) |
+| Word-by-word meanings | Yes | Pre-downloaded |
+| Transliteration | Yes | Pre-downloaded |
+| Urdu tafsirs (2 sources) | Yes | Pre-downloaded (Bayan ul-Quran, Ibn Kathir) |
+| Thematic map (themes.html) | Yes | Self-contained |
+| Root search | Yes | Local index |
+| Dark mode, text scaling | Yes | Stored in localStorage |
+| Arabic tafsirs (7 sources) | No | Fetched live from quran.com API |
+| English tafsirs (2 sources) | No | Fetched live from quran.com API |
+| Amiri font | No | Falls back to system serif |
+
+**In practice, the only features that need internet are 9 of the 11 tafsir sources** (the 2 Urdu tafsirs work offline). Everything else — the concordance, families, lexicography, translation, themes — is fully local.
 
 ---
 
@@ -255,6 +313,9 @@ Responses are cached client-side to minimize API calls.
 ## Project Structure
 
 ```
+start.bat                  # Windows launcher (double-click to run)
+start.sh                   # Mac/Linux launcher (./start.sh)
+
 src/
   quran_loader.py          # Downloads Quran text + morphology from APIs
   root_graph.py            # Builds root → verse index (digital Mufharis)
@@ -282,7 +343,9 @@ app/                       # Static web app (GitHub Pages)
     translations/          # English, WBW, transliteration
 ```
 
-## Build
+## Build from Source
+
+These steps are only needed if you want to regenerate the dataset from scratch. To simply *use* the app, see [Run It Yourself](#run-it-yourself) above — all data files are included in the repo.
 
 ```bash
 pip install requests tqdm huggingface_hub
@@ -291,8 +354,6 @@ python src/build_dataset.py         # Build root dataset from APIs
 python src/export_for_web.py        # Export JSON for web app
 python src/download_translations.py # Download English translations
 python src/tafsir_fetcher.py        # Download Urdu tafsirs
-
-cd app && python -m http.server 8080
 ```
 
 ## Key Stats
