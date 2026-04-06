@@ -6,6 +6,8 @@ A digital Mufharis (concordance) that connects every word in the Quran to every 
 
 **[Live App →](https://r3genesi5.github.io/quran-bil-quran/)** · **[Dataset on HuggingFace](https://huggingface.co/datasets/iqrossed/quran-bil-quran)**
 
+![Reader — Al-Baqarah with English translation, thematic chips, and surah insight](screenshots/reader.png)
+
 ---
 
 ## Why a Concordance Matters
@@ -60,6 +62,10 @@ The 37 families are grouped into 6 macro-groups: Theology, Ethics, Eschatology, 
 | **Collapsible panels** | Accordion sections for organized root information |
 | **Mobile layout** | Responsive header, full-screen root panel, tuned breakpoints for phones |
 
+| Light mode | Dark mode | Mobile |
+|:---:|:---:|:---:|
+| ![Light](screenshots/reader.png) | ![Dark](screenshots/dark-mode.png) | ![Mobile](screenshots/mobile.png) |
+
 ---
 
 ## Offline Use
@@ -98,6 +104,8 @@ Or simply open `app/index.html` in a browser — the only limitation is that `fe
 
 1. **Read** — Browse all 114 surahs with full Uthmani Arabic text. Toggle English translation, word-by-word hover meanings, or Latin transliteration. Adjust text scale (4 levels) and switch light/dark mode
 2. **Click any word** — A panel reveals the word's trilateral root, its Lane's Lexicon meaning, Raghib al-Isfahani's classical definition (*Mufradat*), synonym distinctions (*Furuq*), semantic family membership, co-occurring roots, and every verse sharing that root
+
+![Root panel for رحم — meaning, Mufradat, Furuq, semantic family, connected verses](screenshots/root-panel.png)
 3. **Search roots** — The search bar finds roots by Arabic letters, English meaning, or Buckwalter transliteration. Switch between **Roots** mode (1,651 entries) and **Furuq** mode (synonym distinctions)
 4. **See the themes** — Colored dots under each verse show which of 6 macro-groups are present. A bar under each surah title shows the top semantic families and a computed thematic insight
 5. **Read tafsir** — Click any verse number to expand inline tafsir. 11 sources across 3 languages, switchable via dropdown
@@ -112,6 +120,8 @@ A D3.js force-directed edge bundling (FDEB) diagram visualizing how the 37 seman
 - **Per-surah filter** — see how family connections shift across individual surahs
 - **Click-to-lock** — click a node to isolate its connections; click a connection in the detail panel to focus on a specific edge pair
 - **Pan and zoom** — pinch or scroll to zoom, drag to pan
+
+![Thematic map — 37 semantic families with force-directed edge bundling](screenshots/themes.png)
 
 ---
 
