@@ -22,11 +22,45 @@ This is the classical principle of **تفسير القرآن بالقرآن** �
 
 Arabic is built on trilateral roots. Roots that share a conceptual field — like خلق (create), برأ (originate), فطر (bring into being), صور (form) — belong to the same **semantic family** (here: "Creation"). This project defines 37 such families, curated from classical Arabic lexicography (Lane's Lexicon, Maqayis al-Lugha).
 
-### Why families are useful
+The Quran does not always unfold a concept through one repeated word. It often unfolds it through a *family of roots*. If you are studying هداية (guidance), you do not want only هدى. You also want رشد (right direction), ضلل (misguidance), صرط (path), سبل (ways) — because together they form the terrain of guidance and deviation. Semantic families let you begin from that terrain instead of discovering it manually one root at a time.
 
-- **Thematic fingerprinting**: Each surah gets a computed profile — Al-Baqarah is 73% Theology with distinctive spikes in Purity and Trade; Ar-Rahman is 85% Nature. This is pure computation from the root graph, no AI involved
-- **Cross-referencing by theme**: When you click a root, you see not just its own verses but its entire family — related roots, co-occurring roots, and how often they appear together
-- **Visualizing structure**: The themes page renders all 37 families as a force-directed graph where edge thickness encodes co-occurrence strength. You can see, at a glance, that Guidance and Revelation are tightly coupled while Animals and Trade rarely overlap
+### Why families matter for study
+
+**The problem they solve**: Quran study often breaks if you stay at the level of one English gloss. The root رحم becomes "mercy" and stays there. But the Quran builds mercy through a family — رحم (mercy), غفر (forgiveness), عفو (pardon), صفح (overlooking), حلم (forbearance), رأف (compassion). In verses like 24:22, 64:14, 2:286, and 3:159, multiple mercy-roots cluster inside one ayah. That gives you a Quran-by-Quran map of how mercy is *built* — not as one abstract noun, but as mercy, forgiveness, pardon, forbearance, and overlooking, appearing together in actual verses.
+
+**Convergence — where families collide**: The most powerful insight comes not from individual families but from where families *intersect*. Where do justice and wealth meet? Where do revelation and speech meet? Where do mercy and punishment stand in the same verse? The densest convergence hubs in the Quran include:
+
+| Verse | Roots | Active families | Why it matters |
+|-------|-------|-----------------|----------------|
+| 2:177 | 38 | 16 | The "righteousness" verse — worship, law, mercy, patience, covenant, wealth woven together |
+| 2:282 | 49 | 14 | The debt verse — justice, trade, knowledge, witness, writing in one ayah |
+| 73:20 | 28 | 17 | Night prayer — worship, provision, journey, warfare, mercy, forgiveness in context |
+| 66:8 | 22 | 16 | Repentance — forgiveness, reward, light, guidance, family converge |
+
+These are *junction verses* — places where the Quran weaves together what we often separate into neat compartments. A student can use them as anchor points for deep study, then fan outward through the participating roots and families.
+
+### A study method using families
+
+1. **Pick a family, not a verse** — start from the semantic terrain, not a single ayah
+2. **Inspect the member roots** — separate near-synonyms from opposites inside the same field (e.g., هدى and ضلل both live in the Guidance family)
+3. **Trace density** — find where the family becomes unusually clustered or where it converges with other families
+4. **Then open tafsir** — let the text lead the inquiry first, then let tafsir refine it
+
+This order keeps the Quran as the primary interpreter of itself. Tafsir is layered on top, not placed before the text.
+
+### Practical applications beyond reading
+
+- **Curriculum design** — instead of teaching "belief," "law," and "stories" as separate folders, generate study paths by family clusters and bridges. A class on repentance would branch from توب into رجع, أوب, forgiveness roots, fear/hope roots, and covenant roots where the data shows overlap
+- **Memorization aid** — most people memorize by page or surah order. Families allow memorization by semantic neighborhoods, which strengthens recall through conceptual connections
+- **Translation audit** — check whether one English rendering flattens distinct Arabic roots that the Quran keeps apart, or where English varies its wording while the Quran is actually repeating one root-pattern
+- **Tafsir triage** — if you have limited time, you do not necessarily want the most *frequent* verses on a subject. You want the structurally *richest* ones — where two or more families meet. Those are often where the Quran gives its most complete framing
+- **Claim verification** — when someone says "the Quran treats this matter only as ritual" or "only as punishment," test it against the graph. Do those verses actually co-occur with mercy, covenant, justice, or knowledge families? Often the graph shows the claim is too narrow
+
+### How families are computed
+
+- **Thematic fingerprinting**: Each surah gets a computed profile — Al-Baqarah is 73% Theology with distinctive spikes in Purity and Trade; Ar-Rahman is 85% Nature. Pure computation from the root graph, no AI involved
+- **Cross-referencing by theme**: Click a root to see its entire family — related roots, co-occurring roots, and how often they appear together
+- **Visualizing structure**: The themes page renders all 37 families as a force-directed graph where edge thickness encodes co-occurrence strength. Guidance and Revelation are tightly coupled; Animals and Trade rarely overlap
 
 The 37 families are grouped into 6 macro-groups: Theology, Ethics, Eschatology, Nature, Human, and Society.
 
