@@ -4,7 +4,7 @@
 
 A digital Mufharis (concordance) that connects every word in the Quran to every other verse sharing its trilateral Arabic root. Where a traditional printed concordance gives you a flat alphabetical list, this tool goes further — it groups 1,651 roots into 37 semantic families, computes thematic fingerprints per surah, surfaces classical lexicography inline, and visualizes the entire root-family network as an interactive graph.
 
-**[Live App →](https://r3genesi5.github.io/quran-bil-quran/)** · **[Dataset on HuggingFace](https://huggingface.co/datasets/iqrossed/quran-bil-quran)**
+**[Live App →](https://r3genesi5.github.io/quran-bil-quran/)** · **[Dataset on HuggingFace](https://huggingface.co/datasets/iqrossed/quran-bil-quran)** · [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19451931.svg)](https://doi.org/10.5281/zenodo.19451931)
 
 ![Reader — Al-Baqarah with English translation, thematic chips, and surah insight](screenshots/reader.png)
 
