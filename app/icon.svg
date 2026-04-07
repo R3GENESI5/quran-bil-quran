@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#faf6ef"/>
+  <rect x="16" y="16" width="480" height="480" rx="52" fill="none" stroke="#b8860b" stroke-width="4" opacity="0.3"/>
+  <text x="256" y="230" text-anchor="middle" font-family="serif" font-size="120" fill="#b8860b" direction="rtl">القرآن</text>
+  <text x="256" y="360" text-anchor="middle" font-family="serif" font-size="100" fill="#2c1810" direction="rtl">بالقرآن</text>
+</svg>

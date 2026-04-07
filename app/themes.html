@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>الأسر الدلالية — Thematic Map</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#b8860b">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <script>if(localStorage.getItem('qbq-dark-mode')==='true')document.documentElement.classList.add('dark-mode')</script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -1179,5 +1183,6 @@ header {
     });
 })();
 </script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

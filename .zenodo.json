@@ -1,0 +1,36 @@
+{
+  "title": "Quran bil-Quran — Digital Concordance",
+  "description": "A digital Mufharis (concordance) that connects every word in the Quran to every other verse sharing its trilateral Arabic root. Groups 1,651 roots into 37 semantic families, surfaces classical lexicography inline, and visualizes the root-family network as an interactive graph.",
+  "creators": [
+    {
+      "name": "R3GENESI5",
+      "affiliation": "Independent Researcher"
+    }
+  ],
+  "keywords": [
+    "Quran",
+    "concordance",
+    "Arabic roots",
+    "semantic families",
+    "digital humanities",
+    "Quranic studies",
+    "tafsir",
+    "trilateral roots",
+    "interactive visualization"
+  ],
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/R3GENESI5/quran-bil-quran",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://huggingface.co/datasets/iqrossed/quran-bil-quran",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
